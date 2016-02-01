@@ -21,11 +21,16 @@
 # along with the Linked Data Theatre.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FROM cloudesire/java:7
-MAINTAINER ClouDesire <dev@cloudesire.com>
+FROM java:openjdk-7-jdk
+MAINTAINER Rein <rein.van.t.veer@geodan.nl>
 
 RUN apt-get update \
-    && apt-get install -yq --no-install-recommends wget pwgen ca-certificates \
+    && apt-get install -yq --no-install-recommends \
+        wget \
+        pwgen \
+        ca-certificates \
+        maven \
+        openjdk-7-jdk\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,9 +45,30 @@ RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION
     rm apache-tomcat-*.tar.gz && \
     mv apache-tomcat* tomcat
 
-ADD scripts/create_tomcat_admin_user.sh /create_tomcat_admin_user.sh
-ADD scripts/run.sh /run.sh
-RUN chmod +x /*.sh
+RUN mkdir /ldt
+ADD . /ldt
+WORKDIR /ldt/license-builder
+RUN mvn install
+WORKDIR /ldt/ext-resources
+RUN mvn package
+WORKDIR /ldt/morphrdb
+RUN mvn package
+WORKDIR /ldt/orbeon
+RUN mvn package
+WORKDIR /ldt/processors
+RUN mvn install:install-file -Dfile=../morphrdb/morph-rdb-dist-3.5.15.jar -DgroupId=morphrdb -DartifactId=morphrdb -Dversion=3.5.15 -Dpackaging=jar -DgeneratePom=true
+RUN mvn install:install-file -Dfile=../orbeon/WEB-INF/lib/orbeon.jar -DgroupId=orbeon -DartifactId=orbeon -Dversion=4.10.0 -Dpackaging=jar -DgeneratePom=true
+ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
+RUN mvn install -e
+
+WORKDIR /ldt
+RUN mvn package
+RUN rm -r /tomcat/webapps/*
+RUN mkdir /tomcat/webapps/ROOT
+RUN cp -r /ldt/target/ldt*/* /tomcat/webapps/ROOT/
+RUN cp -r /ldt/src-pdok/main /tomcat/webapps/ROOT/main
+
+RUN chmod +x /ldt/scripts/*.sh
 
 EXPOSE 8080
-CMD ["/run.sh"]
+CMD ["/ldt/scripts/run.sh"]
