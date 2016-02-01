@@ -30,7 +30,6 @@ RUN apt-get update \
         pwgen \
         ca-certificates \
         maven \
-        openjdk-7-jdk\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
