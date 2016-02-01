@@ -60,6 +60,7 @@ RUN mvn install:install-file -Dfile=../orbeon/WEB-INF/lib/orbeon.jar -DgroupId=o
 ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
 RUN mvn install -e
 
+# Main package for Linked Data Theatre
 WORKDIR /ldt
 RUN mvn package
 RUN rm -r /tomcat/webapps/*
