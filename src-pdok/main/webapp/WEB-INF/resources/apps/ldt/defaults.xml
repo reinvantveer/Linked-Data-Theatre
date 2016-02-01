@@ -30,7 +30,7 @@
 	- icon: (optional) the favicon.ico that is visible for this domain
 	- docroot: (optional) use the docroot if the LDT is serving only a subdirectory (for example: http://mydomain.org/linkeddatatheatre/...)
 -->
-<submission docroot="" configuration-endpoint="http://pdok-lod.in.kadaster.nl:8890/sparql" local-endpoint="http://pdok-lod.in.kadaster.nl:8890/sparql" tempdir="rdf">
+<submission docroot="" configuration-endpoint="http://virtuoso:8890/sparql" local-endpoint="http://virtuoso:8890/sparql" tempdir="rdf">
 	<representation-graph site="data.pdok.nl" uri="config:data.pdok.nl" docroot="/ldt"/>
 	<representation-graph site="data.test.pdok.nl" uri="config:data.pdok.nl" docroot="/ldt"/>
 	<representation-graph site="pdok-lod.in.kadaster.nl" uri="config:data.pdok.nl" docroot="/ldt"/>

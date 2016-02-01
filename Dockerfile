@@ -66,7 +66,11 @@ RUN mvn package
 RUN rm -r /tomcat/webapps/*
 RUN mkdir /tomcat/webapps/ROOT
 RUN cp -r /ldt/target/ldt*/* /tomcat/webapps/ROOT/
-RUN cp -r /ldt/src-pdok/main /tomcat/webapps/ROOT/main
+RUN cp -r /ldt/src-pdok/main/webapp/* /tomcat/webapps/ROOT
+RUN mv /tomcat/webapps/ROOT/WEB-INF/resources/apps/css /tomcat/webapps/ROOT/WEB-INF/resources/apps/ldt/
+RUN mv /tomcat/webapps/ROOT/WEB-INF/resources/apps/fonts /tomcat/webapps/ROOT/WEB-INF/resources/apps/ldt/
+RUN mv /tomcat/webapps/ROOT/WEB-INF/resources/apps/images /tomcat/webapps/ROOT/WEB-INF/resources/apps/ldt/
+RUN mv /tomcat/webapps/ROOT/WEB-INF/resources/apps/js /tomcat/webapps/ROOT/WEB-INF/resources/apps/ldt/
 
 RUN chmod +x /ldt/scripts/*.sh
 

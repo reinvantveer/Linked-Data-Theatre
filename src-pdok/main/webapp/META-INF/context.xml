@@ -40,6 +40,6 @@
              username="dba"
              password="dba"
 			    charSet="UTF-8"
-			    url="jdbc:virtuoso://pdok-lod.in.kadaster.nl:1111/"
+			    url="jdbc:virtuoso://virtuoso:1111/"
 	/>
 </Context>
