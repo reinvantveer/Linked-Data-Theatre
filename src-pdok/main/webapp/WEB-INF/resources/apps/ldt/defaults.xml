@@ -34,6 +34,9 @@
 	<representation-graph site="data.pdok.nl" uri="config:data.pdok.nl" docroot="/ldt"/>
 	<representation-graph site="data.test.pdok.nl" uri="config:data.pdok.nl" docroot="/ldt"/>
 	<representation-graph site="pdok-lod.in.kadaster.nl" uri="config:data.pdok.nl" docroot="/ldt"/>
+	<representation-graph site="localhost" uri="config:data.pdok.nl" docroot="/ldt"/>
+	<representation-graph site="192.168.99.100" uri="config:data.pdok.nl" docroot="/ldt"/>
+	<representation-graph site="ec2-54-194-223-74.eu-west-1.compute.amazonaws.com" uri="config:data.pdok.nl" docroot="/ldt"/>
 	<subdomain/>
 	<query/>
 	<format/>
