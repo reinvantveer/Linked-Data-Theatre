@@ -1,0 +1,607 @@
+@prefix ns0:	<http://bp4mc2.org/elmo/def#> .
+@prefix ns1:	<rep://data.pdok.nl/resource#> .
+@prefix rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ns3:	<rep://data.pdok.nl/> .
+@prefix ns4:	<rep://data.pdok.nl#> .
+@prefix ns5:	<rep://data.pdok.nl/ontw/query/graphclassitems#> .
+@prefix ns6:	<rep://data.pdok.nl/ontw/query/> .
+@prefix ns7:	<rep://data.pdok.nl/bag/query/> .
+@prefix ns8:	<http://almere.pilod.nl/> .
+@prefix ns9:	<rep://bag.kadaster.nl/OpenbareRuimte#> .
+@prefix ns10:	<rep://bag.kadaster.nl/> .
+@prefix ns11:	<rep://bag.kadaster.nl/Verblijfsobject#> .
+@prefix ns12:	<rep://bag.kadaster.nl/Woonplaats#> .
+@prefix ns13:	<rep://data.pdok.nl/ontw/query/graphproperties#> .
+@prefix ns14:	<rep://data.pdok.nl/home#> .
+@prefix ns15:	<rep://data.pdok.nl/ontw/query/graphs#> .
+@prefix ns16:	<rep://data.pdok.nl/ontw/query/graphclasses#> .
+@prefix ns17:	<rep://brt.kadaster.nl/query/> .
+@prefix ns18:	<rep://brt.kadaster.nl/query/begrippen#> .
+@prefix ns19:	<rep://brt.kadaster.nl/Begrip#> .
+@prefix ns20:	<rep://brt.kadaster.nl/> .
+@prefix ns21:	<rep://elmo.localhost/> .
+@prefix ns22:	<form://brt.kadaster.nl/> .
+@prefix ns23:	<rep://elmo.localhost/goal/Domein#> .
+@prefix ns24:	<rep://elmo.localhost/goal/> .
+@prefix ns25:	<rep://elmo.localhost/imor/normen#> .
+@prefix ns26:	<rep://elmo.localhost/imor/> .
+@prefix ns27:	<rep://goal.localhost/imor/> .
+@prefix ns28:	<rep://goal.localhost/imor/PlantekstObject#> .
+@prefix ns29:	<rep://goal.localhost/imor/Tekstpatroon#> .
+@prefix ns30:	<rep://goal.localhost/imor#> .
+@prefix ns31:	<rep://goal.localhost/imor/Werkingsgebied#> .
+@prefix ns32:	<rep://bag.kadaster.nl/query/nationaleparken#> .
+@prefix ns33:	<rep://data.pdok.nl/query/> .
+@prefix ns34:	<rep://brt.kadaster.nl/GeoObject#> .
+@prefix ns35:	<rep://bag.kadaster.nl/query/> .
+@prefix ns36:	<rep://bag.kadaster.nl/query/begrippen#> .
+@prefix ns37:	<rep://bag.kadaster.nl/query/woonplaatsen#> .
+@prefix rdfs:	<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ns39:	<http://bp4mc2.org/skosax#> .
+@prefix skos:	<http://www.w3.org/2004/02/skos/core#> .
+@prefix dc:	<http://purl.org/dc/elements/1.1/> .
+@prefix ns42:	<http://purl.org/dc/terms/> .
+@prefix ns43:	<http://www.w3.org/1999/xhtml/vocab#> .
+@prefix ns44:	<http://brt.kadaster.nl/def/imbrt#> .
+@prefix ns45:	<http://goal.localhost/ro/def/imor#> .
+@prefix ogcgs:	<http://www.opengis.net/ont/geosparql#> .
+@prefix ns47:	<http://bag.kadaster.nl/def#> .
+
+ns1:table
+	ns0:fragment	[	rdfs:label	"Tonen"@nl , "Show"@en ;
+				ns43:link	"/query/list-by-predicate" ;
+				ns0:applies-to	"subject" ] , [	rdfs:label	"Gerelateerde resources (gegroepeerd per relatie)"@nl , "Related resources (grouped by relation)"@en ;
+				ns0:applies-to	"property" ;
+				ns0:name	"predicate" ] ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tselect distinct ?property ?property_label ?property_count <@SUBJECT@> as ?subject \"Items\" as ?subject_label\n\t\twhere {\n\t\t\t{\n\t\t\t\tselect ?property count(?item) as ?property_count\n\t\t\t\twhere {\n\t\t\t\t\t?item ?property <@SUBJECT@>\n\t\t\t\t}\n\t\t\t}\n\t\t\tOPTIONAL {\n\t\t\t\t?property rdfs:label ?property_label\n\t\t\t\tFILTER (lang(?property_label)=\"\" or lang(?property_label)=\"@LANGUAGE@\")\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns1:content
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tconstruct {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\t?o rdfs:label ?o_label.\n\t\t\t?o ?bnp ?bno.\n\t\t\t?p rdfs:label ?p_label.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\tOPTIONAL {\n\t\t\t\t?o rdfs:label ?o_label\n\t\t\t\tFILTER (lang(?o_label)=\"@LANGUAGE@\" or lang(?o_label)=\"\")\n\t\t\t}\n\t\t\tOPTIONAL {\n\t\t\t\t?p rdfs:label ?p_label.\n\t\t\t\tFILTER (lang(?p_label)=\"@LANGUAGE@\" or lang(?p_label)=\"\")\n\t\t\t}\n\t\t\tOPTIONAL {\n\t\t\t\t?o ?bnp ?bno.\n\t\t\t\tFILTER(isBlank(?o))\n\t\t\t}\n\t\t\tFILTER (isUri(?o) or isblank(?o) or lang(?o)=\"@LANGUAGE@\" or lang(?o)=\"\")\n\t\t}\n\t" .
+ns1:graphs
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tselect distinct ?graph count(?o)\n\t\twhere {\n\t\t\tgraph ?graph {\n\t\t\t\t<@SUBJECT@>?p?o\n\t\t\t}\n\t\t}\n\t\torder by ?graph\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns3:resource
+	rdf:type	ns0:Representation ;
+	ns0:layer	ns0:BottomLayer ;
+	ns0:contains	ns1:table , ns1:content , ns1:graphs , ns1:graph , ns4:header , ns4:nav , ns1:geo ;
+	ns0:url-pattern	"^http://pdok.localhost/ontw/resource" , "^http://data.test.pdok.nl/ldt/doc/" , "^http://pdok.localhost/ldt/ontw/resource" , "^http://data.test.pdok.nl/ldt/ontw/resource" , "^http://pdok-lod.in.kadaster.nl/ldt/ontw/resource" .
+ns5:content
+	ns0:fragment	[	rdfs:label	"Item"@nl , "Item"@en ;
+				ns0:applies-to	"s" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tselect ?s ?s_label\n\t\twhere {\n\t\t\tgraph <@SUBJECT@> {\n\t\t\t\t?s rdf:type <@CLASS@>.\n\t\t\t\tOPTIONAL {?s rdfs:label ?s_label}\n\t\t\t}\n\t\t}\n\t\tlimit 1000\n\t" .
+ns6:graphclassitems
+	rdf:type	ns0:Representation ;
+	ns0:layer	ns0:BottomLayer ;
+	ns0:contains	ns5:content , ns4:header , ns4:nav ;
+	ns0:url-pattern	"/ontw/query/graphclassitems" .
+ns1:graph
+	ns0:fragment	[	ns0:applies-to	"class" ;
+				ns43:stylesheet	"\n\t\t\tfill: blue;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] , [	ns0:applies-to	"concept" ;
+				ns43:stylesheet	"\n\t\t\tfill: green;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] , [	ns0:applies-to	"geometry" ;
+				ns43:stylesheet	"\n\t\t\tfill: gray;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] ;
+	ns0:index	"4" ;
+	ns0:query	"\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix geosparql: <http://www.opengis.net/ont/geosparql#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\t?o rdfs:label ?olabel.\n\t\t\t<@SUBJECT@> elmo:style ?stype.\n\t\t\t?o elmo:style ?otype.\n\t\t\towl:Class elmo:name \"class\".\n\t\t\tskos:Concept elmo:name \"concept\".\n\t\t\tgeosparql:Geometry elmo:name \"geometry\".\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\t<@SUBJECT@> rdf:type ?stype.\n\t\t\tOPTIONAL {?o rdf:type ?otype}\n\t\t\tOPTIONAL {\n\t\t\t\t?o rdfs:label ?olabel\n\t\t\t\tFILTER (lang(?olabel)=\"@LANGUAGE@\" or lang(?olabel)=\"\")\n\t\t\t}\n\t\t\tFILTER ((isUri(?o) or lang(?o)=\"@LANGUAGE@\" or lang(?o)=\"\") and (?p!=rdf:type or (?o!=skos:Concept and ?o!=owl:Class and ?o!=geosparql:Geometry)))\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GraphAppearance .
+ns7:diagram
+	rdf:type	ns0:Representation ;
+	ns0:layer	ns0:TopLayer ;
+	ns0:query	"\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\t?o rdfs:label ?o_label.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\tOPTIONAL {\n\t\t\t\t?o rdfs:label ?o_label\n\t\t\t\tFILTER (lang(?o_label)=\"@LANGUAGE@\" or lang(?o_label)=\"\")\n\t\t\t}\n\t\t\tFILTER ((isUri(?o) or lang(?o)=\"@LANGUAGE@\" or lang(?o)=\"\") and ?o!=ogc:Feature and ?p!=ogc:hasGeometry)\n\t\t}\n\t" ;
+	ns0:url-pattern	"/ldt/bag/query/diagram" , "^http://bag.kadaster.nl/query/diagram" , "^http://bag.localhost/query/diagram" ;
+	ns0:endpoint	ns8:sparql ;
+	ns0:appearance	ns0:GraphAppearance .
+ns9:content
+	ns0:fragment	[	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t<@SUBJECT@> rdfs:label ?label.\n\t\t\t?o rdfs:label ?ol.\n\t\t}\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t\t<@SUBJECT@> bag:naamOpenbareRuimte ?label.\n\t\t\t\tFILTER (?p = bag:typeOpenbareRuimte\n\t\t\t\t\tor\t?p = bag:identificatiecode\n\t\t\t\t\tor\t?p = bag:status\n\t\t\t\t\tor\t?p = bag:woonplaatsOpenbareRuimte\n\t\t\t\t)\n\t\t\t}\n\t\t\tOPTIONAL {\n\t\t\t\t?o bag:woonplaatsnaam ?ol\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns9:nummers
+	ns0:fragment	[	rdfs:label	"Verblijfsobject" ;
+				ns0:applies-to	"voha" ] , [	rdfs:label	"Diagram" ;
+				ns43:link	"/bag/query/diagram" ;
+				ns0:applies-to	"dia" ] ;
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tselect distinct ?postcode ?huisnummer ?voha \"Verblijfsobject\" as ?voha_label ?voha as ?dia \"Diagram\" as ?dia_label\n\t\twhere {\n\t\t\t?na bag:gerelateerdeOpenbareRuimte <@SUBJECT@>.\n\t\t\t?na bag:postcode ?postcode.\n\t\t\t?na bag:huisnummer ?huisnummer.\n\t\t\tOPTIONAL {?voha bag:hoofdadres ?na}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns10:OpenbareRuimte
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns47:OpenbareRuimte ] ;
+	ns0:contains	ns9:content , ns9:nummers , ns4:header , ns4:nav ;
+	ns0:uri-pattern	"^http://bag.kadaster.nl/id/openbareruimte/" .
+ns11:geo
+	rdf:type	ns0:Representation ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> geo:geometry ?wktgeo.\n\t\t\t<@SUBJECT@> rdfs:label \"Verblijfsobject\".\n\t\t\t?pand geo:geometry ?wktpgeo.\n\t\t\t?pand rdfs:label \"Pand\".\n\t\t\t?pand ?p ?o.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> ogc:hasGeometry ?geo.\n\t\t\t?geo ogc:asWKT ?wktgeo.\n\t\t\tOPTIONAL {\n\t\t\t\t<@SUBJECT@> bag:onderdeelVan ?pand.\n\t\t\t\t?pand ?p ?o.\n\t\t\t\t?pand ogc:hasGeometry ?pgeo.\n\t\t\t\t?pgeo ogc:asWKT ?wktpgeo\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql ;
+	ns0:appearance	ns0:GeoAppearance .
+ns11:content
+	ns0:fragment	[	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t<@SUBJECT@> rdfs:label \"Verblijfsobject\".\n\t\t\t<@SUBJECT@> bag:adres ?adres.\n\t\t\t?o rdfs:label ?ol.\n\t\t}\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t\tFILTER (?p = bag:gebruiksdoel\n\t\t\t\t\tor\t?p = bag:oppervlakte\n\t\t\t\t\tor\t?p = bag:ingangsdatum\n\t\t\t\t\tor\t?p = bag:identificatiecode\n\t\t\t\t\tor\t?p = bag:status\n\t\t\t\t)\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?o rdfs:label ?ol\n\t\t\t\t}\n\t\t\t}\n\t\t\tOPTIONAL {\n\t\t\t\tSELECT concat(?orn,' ',?hnr,' ',?pcd,' ',?wpn) as ?adres\n\t\t\t\tWHERE {\n\t\t\t\t\t<@SUBJECT@> bag:hoofdadres ?na.\n\t\t\t\t\t?na bag:huisnummer ?hnr.\n\t\t\t\t\t?na bag:postcode ?pcd.\n\t\t\t\t\t?na bag:gerelateerdeOpenbareRuimte ?or.\n\t\t\t\t\t?or bag:naamOpenbareRuimte ?orn.\n\t\t\t\t\t?or bag:woonplaatsOpenbareRuimte ?wp.\n\t\t\t\t\t?wp bag:woonplaatsnaam ?wpn.\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns11:indebuurt
+	ns0:fragment	[	rdfs:label	"BRT Object" ;
+				ns0:applies-to	"objt" ] , [	rdfs:label	"Naam" ;
+				ns0:applies-to	"obj" ] ;
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tprefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix brt: <http://brt.kadaster.nl/def/imbrt#>\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tselect ?objt ?obj ?obj_label\n\t\twhere {\n\t\t\t<@SUBJECT@> ogc:hasGeometry ?sgeo.\n\t\t\t?sgeo ogc:asWKT ?swkt.\n\t\t\t?obj ogc:hasGeometry ?ogeo.\n\t\t\t?obj rdf:type ?objt.\n\t\t\tOPTIONAL {?obj brt:naam ?obj_label}\n\t\t\t?ogeo ogc:asWKT ?owkt.\n\t\t\tFILTER(bif:st_intersects(?owkt,?swkt))\n\t\t\tFILTER (?objt = brt:Plaats\n\t\t\t\tor\t?objt = brt:Gemeente\n\t\t\t\tor\t?objt = brt:Gebouw\n\t\t\t)\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns10:Verblijfsobject
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns47:Verblijfsobject ] ;
+	ns0:contains	ns11:geo , ns11:content , ns11:indebuurt , ns4:header , ns4:nav ;
+	ns0:uri-pattern	"^http://bag.kadaster.nl/id/verblijfsobject/" .
+ns12:geo
+	rdf:type	ns0:Representation ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> geo:geometry ?wktgeo.\n\t\t\t<@SUBJECT@> rdfs:label ?label.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> ogc:hasGeometry ?geo.\n\t\t\t<@SUBJECT@> bag:woonplaatsnaam ?label.\n\t\t\t?geo ogc:asWKT ?wktgeo.\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql ;
+	ns0:appearance	ns0:GeoAppearance .
+ns12:content
+	ns0:fragment	[	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t<@SUBJECT@> rdfs:label ?label.\n\t\t\t?o rdfs:label ?ol.\n\t\t}\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t\t<@SUBJECT@> bag:woonplaatsnaam ?label.\n\t\t\t\tFILTER (?p = bag:ingangsdatum\n\t\t\t\t\tor\t?p = bag:identificatiecode\n\t\t\t\t\tor\t?p = bag:status\n\t\t\t\t)\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?o rdfs:label ?ol\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns12:straten
+	ns0:fragment	[	rdfs:label	"Openbare ruimte" ;
+				ns0:applies-to	"or" ] ;
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tselect distinct ?or ?or_label\n\t\twhere {\n\t\t\t?or bag:woonplaatsOpenbareRuimte <@SUBJECT@>.\n\t\t\t?or bag:naamOpenbareRuimte ?or_label\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns10:Woonplaats
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns47:Woonplaats ] ;
+	ns0:contains	ns12:geo , ns12:content , ns12:straten , ns4:header , ns4:nav ;
+	ns0:uri-pattern	"^http://bag.kadaster.nl/id/woonplaats/" .
+ns4:header
+	ns0:index	"~" ;
+	ns0:appearance	ns0:HeaderAppearance ;
+	ns0:data	[	ns0:html	"<img src='/ldt/images/ldp-logo.png'></img>"^^rdf:HTML ] .
+ns4:nav
+	ns0:index	"~" ;
+	ns0:appearance	ns0:NavbarSearchAppearance ;
+	ns0:data	[	rdfs:label	"Linked Data Theater" ;
+				ns0:data	[	rdfs:label	"PDOK" ;
+						ns0:index	"5" ;
+						ns0:data	[	rdfs:label	"Nationale parken" ;
+								ns43:link	"/ldt/query/nationaleparken" ;
+								ns0:index	"1" ] ] , [	rdfs:label	"Ontwikkelwerk" ;
+						ns0:index	"1" ;
+						ns0:data	[	rdfs:label	"Graphs" ;
+								ns43:link	"/ldt/ontw/query/graphs" ;
+								ns0:index	"1" ] ] , [	rdfs:label	"BRT" ;
+						ns0:index	"2" ;
+						ns0:data	[	rdfs:label	"Op de kaart" ;
+								ns43:link	"/ldt/brt/query/kaart" ;
+								ns0:index	"3" ] , [	rdfs:label	"Begrippen" ;
+								ns43:link	"/ldt/brt/query/begrippen?term=a" ;
+								ns0:index	"1" ] , [	rdfs:label	"Objecten" ;
+								ns43:link	"/ldt/brt/query/objecten" ;
+								ns0:index	"2" ] ] , [	rdfs:label	"BAG" ;
+						ns0:index	"3" ;
+						ns0:data	[	rdfs:label	"Begrippen" ;
+								ns43:link	"/ldt/bag/query/begrippen?term=a" ;
+								ns0:index	"1" ] , [	rdfs:label	"Woonplaatsen" ;
+								ns43:link	"/ldt/bag/query/woonplaatsen?term=a" ;
+								ns0:index	"2" ] ] , [	rdfs:label	"Omgevingsplannen" ;
+						ns0:index	"4" ;
+						ns0:data	[	rdfs:label	"Voorbeeld normen" ;
+								ns43:link	"/ldt/query/normen" ;
+								ns0:index	"4" ] , [	rdfs:label	"Lokale begrippen" ;
+								ns43:link	"/ldt/query/lokalebegrippen" ;
+								ns0:index	"5" ] , [	rdfs:label	"RO: Bestemmingsplangebied" ;
+								ns43:link	"/ldt/resource?subject=http://data.test.pdok.nl/ldt/ro/id/object/NL.IMRO.0858.BPcentrum-VA01" ;
+								ns0:index	"1" ] , [	rdfs:label	"RO: Structuurvisiegebied" ;
+								ns43:link	"/ldt/resource?subject=http://data.test.pdok.nl/ldt/ro/id/object/NL.IMRO.9930.pmwp2016-on01" ;
+								ns0:index	"2" ] , [	rdfs:label	"Voorbeeld omgevingsplan" ;
+								ns43:link	"/ldt/resource?subject=http://data.test.pdok.nl/ldt/ro/id/object/NL.IMRO.1234.DemoOmgevingsplan-0001" ;
+								ns0:index	"3" ] ] ] .
+ns6:graphproperties
+	rdf:type	ns0:Representation ;
+	ns0:layer	ns0:BottomLayer ;
+	ns0:contains	ns4:header , ns4:nav , ns13:content ;
+	ns0:url-pattern	"/ontw/query/graphproperties" .
+ns14:content
+	ns0:index	"1" ;
+	ns0:appearance	ns0:HtmlAppearance ;
+	ns0:data	[	rdfs:label	"Welkom" ;
+				ns0:html	"<div>\n\t\t\t\t<p>Welkom op de demopagina.</p>\n\t\t\t</div>" ] .
+ns6:graphs
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns15:content ;
+	ns0:url-pattern	"/ontw/query/graphs" .
+ns15:content
+	ns0:fragment	[	rdfs:label	"Model"@en , "Model"@nl ;
+				rdf:value	"Model" ;
+				ns43:link	"/ontw/query/datamodel.yed" ;
+				ns0:applies-to	"model" ] , [	rdfs:label	"Ontology"@en , "Ontologie"@nl ;
+				rdf:value	"Ontology"@en , "Ontologie"@nl ;
+				ns43:link	"/ontw/query/ontology.ttl" ;
+				ns0:applies-to	"ontology" ] , [	rdfs:label	"Klassen"@nl , "Classes"@en ;
+				rdf:value	"Items" ;
+				ns43:link	"/ontw/query/graphclasses" ;
+				ns0:applies-to	"subject" ] , [	rdfs:label	"Properties"@en , "Eigenschappen"@nl ;
+				rdf:value	"Items" ;
+				ns43:link	"/ontw/query/graphproperties" ;
+				ns0:applies-to	"properties" ] , [	rdfs:label	"Graph"@en , "Populatie"@nl ;
+				ns0:applies-to	"g" ] , [	rdfs:label	"Number of triples"@en , "Aantal triples"@nl ;
+				ns0:applies-to	"triplecount" ] , [	rdfs:label	"Dump" ;
+				rdf:value	"Download" ;
+				ns43:link	"/ontw/query/graph.xml" ;
+				ns0:applies-to	"dump" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tselect distinct ?g count(?s) as ?triplecount ?g as ?subject ?g as ?properties ?g as ?model ?g as ?ontology ?g as ?dump\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t?s?p?o\n\t\t\t}\n\t\t}\n\t" .
+ns16:content
+	ns0:fragment	[	rdfs:label	"Klasse"@nl , "Class"@en ;
+				ns0:applies-to	"c" ;
+				ns0:name	"class" ] , [	rdfs:label	"Items"@en , "Items"@nl ;
+				rdf:value	"Items" ;
+				ns43:link	"/ontw/query/graphclassitems" ;
+				ns0:applies-to	"graph" ] , [	rdfs:label	"Properties"@en , "Eigenschappen"@nl ;
+				rdf:value	"Properties"@en , "Eigenschappen"@nl ;
+				ns43:link	"/ontw/query/graphclassproperties" ;
+				ns0:applies-to	"prop" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tselect distinct ?class ?super ?c ?graph_count <@SUBJECT@> as ?graph <@SUBJECT@> as ?prop\n\t\twhere {\n\t\t\tgraph <@SUBJECT@> {\n\t\t\t\t{\n\t\t\t\t\t{\n\t\t\t\t\t\tselect ?c count(?s) as ?graph_count\n\t\t\t\t\t\twhere {?s rdf:type ?c}\n\t\t\t\t\t}\n#\t\t\t\t\tUNION\n#\t\t\t\t\t{?c rdf:type rdfs:Class}\n#\t\t\t\t\tUNION\n#\t\t\t\t\t{?c rdf:type owl:Class}\n\t\t\t\t}\n\t\t\t\tOPTIONAL {?c rdfs:subClassOf ?super}\n\t\t\t\tOPTIONAL {?c rdf:type ?class}\n\t\t\t}\n\t\t}\n\t" .
+ns6:graphclasses
+	rdf:type	ns0:Representation ;
+	ns0:layer	ns0:BottomLayer ;
+	ns0:contains	ns4:header , ns4:nav , ns16:content ;
+	ns0:url-pattern	"/ontw/query/graphclasses" .
+ns13:content
+	ns0:fragment	[	rdfs:label	"Values"@en , "Waarden"@nl ;
+				rdf:value	"Values"@en , "Waarden"@nl ;
+				ns43:link	"/ontw/query/propertyvalues" ;
+				ns0:applies-to	"graph" ] , [	rdfs:label	"Domein"@nl , "Domain"@en ;
+				rdf:value	"Domein"@nl , "Domain"@en ;
+				ns43:link	"/ontw/query/propertydomain" ;
+				ns0:applies-to	"graph2" ] , [	rdfs:label	"Predicate"@en , "Eigenschap"@nl ;
+				ns0:applies-to	"p" ;
+				ns0:name	"property" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tselect distinct ?p count(?s) as ?count <@SUBJECT@> as ?graph <@SUBJECT@> as ?graph2\n\t\twhere {\n\t\t\tgraph <@SUBJECT@> {\n\t\t\t\t{?s ?p ?o}\n\t\t\t\tUNION\n\t\t\t\t{?p rdf:type rdf:Property}\n\t\t\t\tUNION\n\t\t\t\t{?p rdf:type owl:DatatypeProperty}\n\t\t\t\tUNION\n\t\t\t\t{?p rdf:type owl:ObjectProperty}\n\t\t\t}\n\t\t}\n\t" .
+ns17:objecten
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav ;
+	ns0:fragment	[	rdfs:label	"Voorbeelden" ;
+				ns43:link	"/brt/query/voorbeelden" ;
+				ns0:applies-to	"geoclass" ] ;
+	ns0:query	"\n#\t\tselect count(*)\n#\t\twhere {?x rdf:type ?y}\n\t\tselect distinct ?geoclass count(?obj) as ?geoclass_count\n\t\twhere {\n\t\t\tgraph <http://brt.kadaster.nl/id/dataset/top10nl_30O> {\n\t\t\t\t?obj rdf:type ?geoclass\n\t\t\t}\n\t\t}\n#\t\tprefix brt: <http://brt.kadaster.nl/def/imbrt#>\n#\t\tselect distinct ?geotype ?geoclass ?geoclass_count\n#\t\twhere {\n#\t\t\tservice <http://almere.pilod.nl/sparql> {\n#\t\t\t\tselect distinct ?geoclass count(?obj) as ?geoclass_count\n#\t\t\t\twhere {\n#\t\t\t\t\tgraph <http://brt.kadaster.nl/id/dataset/top10nl_30O> {\n#\t\t\t\t\t\t?obj rdf:type ?geoclass\n#\t\t\t\t\t}\n#\t\t\t\t}\n#\t\t\t}\n#\t\t\tgraph <http://brt.kadaster.nl/imbrt/doc> {\n#\t\t\t\t?geoclass rdf:type owl:Class.\n#\t\t\t\t?geoclass rdfs:subClassOf ?geotype.\n#\t\t\t}\n#\t\t}\n\t" ;
+	ns0:url-pattern	"^http://brt.localhost/query/objecten$" , "^http://brt.kadaster.nl/query/objecten$" , "/ldt/brt/query/objecten$" ;
+	ns0:endpoint	ns8:sparql .
+ns18:index
+	ns0:index	"1" ;
+	ns0:appearance	ns0:IndexAppearance ;
+	ns0:data	[	rdfs:label	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|alle begrippen" ;
+				rdf:value	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|" ;
+				ns43:link	"/ldt/brt/query/begrippen" ;
+				ns0:name	"term" ] .
+ns18:content
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tselect ?begrip ?begrip_label ?uitleg\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t?begrip rdf:type skos:Concept.\n\t\t\t\t?begrip rdfs:label ?begrip_label.\n\t\t\t\tOPTIONAL {?begrip skos:definition ?uitleg}\n\t\t\t\tFILTER regex(?begrip_label,'^[^a-z]*@TERM@','i').\n\t\t\t}\n\t\t\tfilter (?g = <http://brt.kadaster.nl/id/dataset/begrippen>\n\t\t\t)\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns17:begrippen
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns18:index , ns18:content ;
+	ns0:url-pattern	"^http://brt.kadaster.nl/query/begrippen$" , "^http://brt.localhost/query/begrippen$" , "/ldt/brt/query/begrippen" .
+ns19:glossary
+	ns0:query	"\n\t\tprefix skos: <http://www.w3.org/2004/02/skos/core#>\n\t\tprefix orl: <http://bp4mc2.org/orl#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tconstruct {\n\t\t\t?begrip elmo:name ?begrip_label\n\t\t}\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t<@SUBJECT@> skos:inScheme ?domein.\n\t\t\t\t?begrip skos:inScheme ?domein.\n\t\t\t\t?begrip rdf:type ?type.\n\t\t\t\t?begrip rdfs:label ?begrip_label\n\t\t\t\tFILTER (?type=skos:Concept or ?type=orl:Action)\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:appearance	ns0:HiddenAppearance .
+ns19:content
+	ns0:fragment	[	rdfs:label	"Zie ook"@nl ;
+				ns0:applies-to	rdfs:seeAlso ;
+				ns0:index	"9" ] , [	rdfs:label	"Lijkt op"@nl ;
+				ns0:applies-to	ns39:originatedFrom ;
+				ns0:index	"9A" ;
+				ns0:appearance	ns0:GlobalLink ] , [	rdfs:label	"Onderdeel van"@nl ;
+				ns0:applies-to	ns39:broaderPartitive ;
+				ns0:index	"7b" ] , [	rdfs:label	"Gerelateerd aan"@nl ;
+				ns0:applies-to	ns39:relatedTransitive ;
+				ns0:index	"8" ] , [	rdfs:label	"Specialisatie van"@nl ;
+				ns0:applies-to	ns39:broaderGeneric ;
+				ns0:index	"7" ] , [	rdfs:label	"Bestaat uit"@nl ;
+				ns0:applies-to	ns39:narrowerPartitive ;
+				ns0:index	"7a" ] , [	rdfs:label	"Rationale"@nl ;
+				ns0:applies-to	skos:editorialNote ;
+				ns0:index	"5" ] , [	rdfs:label	"Generalisatie van"@nl ;
+				ns0:applies-to	ns39:narrowerGeneric ;
+				ns0:index	"6" ] , [	rdfs:label	"Herkomst"@nl ;
+				ns0:applies-to	dc:source ;
+				ns0:index	"3a" ] , [	rdfs:label	"Toelichting"@nl ;
+				ns0:applies-to	skos:scopeNote ;
+				ns0:index	"4" ] , [	rdfs:label	"Collectie"@nl ;
+				ns0:applies-to	skos:memberOf ;
+				ns0:index	"2a" ] , [	rdfs:label	"Brontekst"@nl ;
+				ns0:applies-to	ns42:source ;
+				ns0:index	"3" ] , [	rdfs:label	"Definitie"@nl ;
+				ns0:applies-to	skos:definition ;
+				ns0:index	"1" ;
+				ns43:glossary	ns19:glossary ] , [	rdfs:label	"Domein"@nl ;
+				ns0:applies-to	skos:inScheme ;
+				ns0:index	"2" ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix skos: <http://www.w3.org/2004/02/skos/core#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tprefix skosax: <http://bp4mc2.org/skosax#>\n\t\tprefix orl: <http://bp4mc2.org/orl#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t?o rdfs:label ?olabel.\n\t\t\t<@SUBJECT@> dcterms:source ?wg.\n\t\t\t?wg rdfs:label ?wg_label.\n\t\t\t<@SUBJECT@> rdfs:seeAlso ?op.\n\t\t\t?op rdfs:label ?op_label.\n\t\t\t<@SUBJECT@> skos:memberOf ?col.\n\t\t\t?col rdfs:label ?col_label.\n\t\t}\n\t\twhere {\n\t\t\t{\n\t\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t\tFILTER (?p = rdfs:label \n\t\t\t\t\tor ?p=skos:definition\n\t\t\t\t\tor ?p=skos:altLabel\n\t\t\t\t\tor ?p=skos:scopeNote\n\t\t\t\t\tor ?p=skos:editorialNote\n\t\t\t\t\tor ?p=skosax:broaderGeneric\n\t\t\t\t\tor ?p=skosax:narrowerGeneric\n\t\t\t\t\tor ?p=skosax:broaderPartitive\n\t\t\t\t\tor ?p=skosax:narrowerPartitive\n\t\t\t\t\tor ?p=skosax:relatedTransitive\n\t\t\t\t\tor ?p=rdfs:seeAlso\n\t\t\t\t\tor ?p=dcterms:source\n\t\t\t\t\tor ?p=skos:inScheme\n\t\t\t\t\tor ?p=dc:source\n\t\t\t\t\tor ?p=skosax:originatedFrom\n\t\t\t\t)\n\t\t\t\tOPTIONAL {?o rdfs:label ?olabel}\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?col skos:member <@SUBJECT@>.\n\t\t\t\t\t?col rdfs:label ?col_label.\n\t\t\t\t}\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?geb ?q <@SUBJECT@>.\n\t\t\t\t\t?geb rdf:type orl:Action.\n\t\t\t\t}\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?op rdfs:seeAlso <@SUBJECT@>.\n\t\t\t\t\t?op rdfs:label ?op_label.\n\t\t\t\t}\n\t\t\t}\n#\t\t\tOPTIONAL {\n#\t\t\t\tgraph <http://wetten.overheid.nl/goal/links#> {\n#\t\t\t\t\t<@SUBJECT@> dcterms:source ?wg.\n#\t\t\t\t}\n#\t\t\t\tOPTIONAL {\n#\t\t\t\t\tgraph <http://wetten.overheid.nl#> {\n#\t\t\t\t\t\t?wg rdfs:label ?wg_label.\n#\t\t\t\t\t}\n#\t\t\t\t}\n#\t\t\t}\n\t\t}\n\t" .
+ns19:grafisch
+	rdf:type	ns0:Representation ;
+	ns0:fragment	[	ns0:applies-to	"regeling" ;
+				ns43:stylesheet	"\n\t\t\tfill: gray;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] , [	ns0:applies-to	"begrip" ;
+				ns43:stylesheet	"\n\t\t\tfill: red;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] , [	ns0:applies-to	"handeling" ;
+				ns43:stylesheet	"\n\t\t\tfill: green;\n\t\t\tfill-opacity: .3;\n\t\t\tstroke: #666;\n\t\t" ] ;
+	ns0:query	"\n\t\tprefix skos: <http://www.w3.org/2004/02/skos/core#>\n\t\tprefix skosax: <http://bp4mc2.org/skosax#>\n\t\tprefix orl: <http://bp4mc2.org/orl#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> rdfs:label ?begrip_label.\n\t\t\t<@SUBJECT@> elmo:style ?stype.\n\t\t\t<@SUBJECT@> ?p ?o.\n\t\t\t?o rdfs:label ?olabel.\n\t\t\t?o elmo:style ?type.\n\t\t\t?or ?pr <@SUBJECT@>.\n\t\t\t?or rdfs:label ?orlabel.\n\t\t\t?or elmo:style ?rtype.\n\t\t\tskosax:relatedTransitive rdfs:label \"gerelateerd aan\".\n\t\t\tskosax:broaderGeneric rdfs:label \"specialisatie van\".\n\t\t\tskosax:narrowerGeneric rdfs:label \"generalisatie van\".\n\t\t\trdfs:seeAlso rdfs:label \"zie ook\".\n\t\t\tskos:Concept elmo:name \"begrip\".\n\t\t\torl:Action elmo:name \"handeling\".\n\t\t\torl:spatial rdfs:label \"op locatie van\".\n\t\t\t<@SUBJECT@> dcterms:source ?wg.\n\t\t\t?wg elmo:style <urn:regeling>.\n\t\t\t?wg rdfs:label ?wg_label.\n#\t\t\t<urn:regeling> elmo:name \"regeling\".\n\t\t\tontro:Tekstelement elmo:name \"regeling\".\n\t\t\tdcterms:source rdfs:label \"brontekst\".\n\t\t\tdcterms:subject rdfs:label \"aanduiding\".\n\t\t}\n\t\twhere {\n\t\t\t{\n\t\t\t\t<@SUBJECT@> rdfs:label ?begrip_label.\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t<@SUBJECT@> ?p ?o.\n\t\t\t\t\t<@SUBJECT@> rdf:type ?stype.\n\t\t\t\t\t?o rdf:type ?type.\n\t\t\t\t\t?o rdfs:label ?olabel.\n\t\t\t\t\tFILTER (?type = skos:Concept or ?type = orl:Action or ?p = dcterms:subject or ?p = dcterms:source)\n\t\t\t\t}\n\t\t\t}\n\t\t\tUNION\n\t\t\t{\n\t\t\t\t?or rdf:type ?rtype.\n\t\t\t\t?or rdfs:label ?orlabel.\n\t\t\t\t?or ?pr <@SUBJECT@>\n\t\t\t\tFILTER (?rtype = skos:Concept or ?rtype = orl:Action or ?pr = dcterms:subject)\n\t\t\t}\n#\t\t\tOPTIONAL {\n#\t\t\t\tgraph <http://wetten.overheid.nl/goal/links#> {\n#\t\t\t\t\t<@SUBJECT@> dcterms:source ?wg.\n#\t\t\t\t}\n#\t\t\t\tgraph <http://wetten.overheid.nl#> {\n#\t\t\t\t\t?wg rdfs:label ?wg_label.\n#\t\t\t\t}\n#\t\t\t}\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GraphAppearance .
+ns20:Begrip
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	skos:Concept ] ;
+	ns0:contains	ns4:header , ns4:nav , ns19:glossary , ns19:content , ns19:grafisch .
+ns3:home
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns14:content ;
+	ns0:url-pattern	"^http://data.test.pdok.nl/ldt$" , "^http://pdok-lod.in.kadaster.nl/ldt$" , "^http://pdok.localhost/ldt$" .
+ns21:info
+	rdf:type	ns0:Representation ;
+	ns0:fragment	[	ns0:applies-to	rdf:type ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Versie van"@nl , "Version of"@en ;
+				ns0:applies-to	ns42:isVersionOf ;
+				ns0:index	"1" ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Version number"@en , "Versienummer"@nl ;
+				ns0:applies-to	ns42:version ;
+				ns0:index	"2" ] , [	rdfs:label	"versiedatum"@nl , "Date"@en ;
+				ns0:applies-to	ns42:date ;
+				ns0:index	"3" ] ;
+	ns0:query	"" ;
+	ns0:file	"version-info" .
+ns22:kaart
+	rdf:type	ns0:Form ;
+	ns0:fragment	[	rdfs:label	"Huisnummer"@nl ;
+				ns0:applies-to	"hnr" ;
+				ns0:index	"2" ;
+				ns0:constraint	ns0:MandatoryConstraint ] , [	rdfs:label	"Zoeken"@nl ;
+				ns0:index	"3" ;
+				ns0:appearance	ns0:SubmitAppearance ] , [	rdfs:label	"Postcode"@nl ;
+				ns0:applies-to	"postcode" ;
+				ns0:index	"1" ;
+				ns0:constraint	ns0:MandatoryConstraint ] .
+ns20:kaart
+	rdf:type	ns0:Representation ;
+	ns0:queryForm	ns22:kaart ;
+	ns0:contains	ns4:header , ns4:nav ;
+	ns0:fragment	[	rdfs:label	"Adres" ;
+				ns43:link	"/brt/query/toonOpKaart" ;
+				ns0:applies-to	"n" ] , [	ns0:applies-to	"wkt" ;
+				ns0:name	"wkt" ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Straat" ;
+				ns0:applies-to	"on" ] , [	rdfs:label	"Plaats" ;
+				ns0:applies-to	"wn" ] ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tselect distinct ?n \"@POSTCODE@ @HNR@\" as ?n_label ?on ?wn ?wkt\n\t\twhere {\n\t\t\t?n bag:postcode \"@POSTCODE@\"^^<http://www.w3.org/2001/XMLSchema#string>.\n\t\t\t?n bag:huisnummer \"@HNR@\"^^<http://www.w3.org/2001/XMLSchema#string>.\n\t\t\t?v bag:hoofdadres ?n.\n\t\t\t?v <http://www.opengis.net/ont/geosparql#hasGeometry> ?geo.\n\t\t\t?geo <http://www.opengis.net/ont/geosparql#asWKT> ?wkt.\n\t\t\t?n bag:gerelateerdeOpenbareRuimte ?o.\n\t\t\t?o bag:naamOpenbareRuimte ?on.\n\t\t\t?o bag:woonplaatsOpenbareRuimte ?w.\n\t\t\t?w bag:woonplaatsnaam ?wn\n\t\t}\n\t" ;
+	ns0:url-pattern	"^http://brt.kadaster.nl/query/kaart" , "/ldt/brt/query/kaart" , "^http://brt.localhost/query/kaart" ;
+	ns0:endpoint	ns8:sparql .
+ns20:toonOpKaart
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav ;
+	ns0:index	"0" ;
+	ns0:query	"\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tprefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix brt: <http://brt.kadaster.nl/def/imbrt#>\n\t\tconstruct {\n\t\t\t<urn:loc> geo:geometry \"@WKT@\".\n\t\t\t?obj geo:geometry ?wkt.\n\t\t\t?obj rdf:type ?obj_type.\n\t\t\t?obj rdfs:label ?label.\n\t\t}\n\t\twhere {\n\t\t\tgraph <http://brt.kadaster.nl/id/dataset/top10nl_30O> {\n\t\t\t\t?obj <http://www.opengis.net/ont/geosparql#hasGeometry> ?geo.\n\t\t\t\t?obj rdf:type ?obj_type.\n\t\t\t\t?obj rdfs:label ?label.\n\t\t\t\t?geo <http://www.opengis.net/ont/geosparql#asWKT> ?wkt\n\t\t\t\tFILTER (bif:st_intersects(?wkt,bif:st_geomfromtext(\"@WKT@\"),0.001))\n\t\t\t\tFILTER NOT EXISTS {\n\t\t\t\t\t{?obj rdf:type brt:RegistratiefGebied} UNION\n\t\t\t\t\t{?obj rdf:type brt:GeografischGebied}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:url-pattern	"^http://brt.kadaster.nl/query/toonOpKaart" , "^http://brt.localhost/query/toonOpKaart" , "/ldt/brt/query/toonOpKaart" ;
+	ns0:endpoint	ns8:sparql ;
+	ns0:appearance	ns0:GeoAppearance .
+ns23:begrippen
+	ns0:fragment	[	rdfs:label	"Begrip"@nl ;
+				ns0:applies-to	"begrip" ] , [	rdfs:label	"Definitie"@nl ;
+				ns0:applies-to	"definitie" ] ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tselect ?begrip ?begrip_label ?definitie\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t?begrip skos:inScheme <@SUBJECT@>.\n\t\t\t\t?begrip rdf:type skos:Concept.\n\t\t\t\t?begrip rdfs:label ?begrip_label.\n\t\t\t\tOPTIONAL {?begrip skos:definition ?definitie}\n\t\t\t}\n\t\t}\n\t" .
+ns24:Domein
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	skos:ConceptScheme ] ;
+	ns0:contains	ns4:header , ns4:nav , ns23:begrippen , ns23:content , ns23:tabnav .
+ns23:content
+	ns0:fragment	[	rdfs:label	"Domein" ;
+				ns0:applies-to	ns42:title ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	ns0:applies-to	rdf:type ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix skos: <http://www.w3.org/2004/02/skos/core#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tprefix skosax: <http://bp4mc2.org/skosax#>\n\t\tprefix orl: <http://bp4mc2.org/orl#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> rdfs:label \"Begrippen per domein\".\n\t\t\t<@SUBJECT@> rdf:type ?st.\n\t\t\t<@SUBJECT@> dcterms:title ?sl.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> rdfs:label ?sl.\n\t\t\t<@SUBJECT@> rdf:type ?st.\n\t\t}\n\t" .
+ns23:tabnav
+	ns0:index	"0" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tselect ?tekst <@SUBJECT@> as ?begrippen ?gebied\n\t\twhere {\n\t\t\t<@SUBJECT@> ontro:werkingsgebied ?gebied.\n\t\t\t<@SUBJECT@> rdf:type skos:ConceptScheme.\n\t\t\t?tekst ontro:werkingsgebied ?gebied.\n\t\t\t?tekst ontro:niveau \"0\".\n\t\t}\n\t" ;
+	ns0:appearance	ns0:IndexAppearance .
+ns25:lijst
+	rdf:type	ns0:Representation ;
+	ns0:fragment	[	rdfs:label	"Soort" ;
+				ns0:applies-to	"ps" ] , [	rdfs:label	"Brontekst" ;
+				ns0:applies-to	"bron" ] , [	rdfs:label	"Norm" ;
+				ns0:applies-to	"t" ] , [	rdfs:label	"Type" ;
+				ns0:applies-to	"pt" ] ;
+	ns0:query	"\n\t\tprefix imor: <http://goal.localhost/ro/def/imor#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tselect ?pt ?ps ?t ?t_label ?bron ?bron_label\n\t\twhere {\n\t\t\t?t rdf:type imor:Tekstpatroon.\n\t\t\t?t rdfs:label ?t_label.\n\t\t\t?t imor:patroontype ?pt.\n\t\t\t?t imor:patroonsoort ?ps.\n\t\t\tOPTIONAL {\n\t\t\t\t?t dcterms:source ?bron.\n\t\t\t\t?bron rdfs:label ?bron_label\n\t\t\t}\n\t\t}\n\t\torder by ?pt ?ps\n\t" .
+ns26:normen
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns25:lijst ;
+	ns0:url-pattern	"/ldt/query/normen" .
+ns27:Tekstelement
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns45:Tekstelement ] ;
+	ns0:contains	ns4:header , ns4:nav , ns28:childs , ns28:content , ns28:geo , ns28:html , ns28:normen , ns28:tabnav .
+ns28:childs
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tselect ?volgnr ?child ?child_label\n\t\twhere {\n\t\t\t?child ontro:ouder <@SUBJECT@>.\n\t\t\t?child rdfs:label ?child_label.\n\t\t\t?child ontro:volgnummer ?volgnr\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns28:content
+	ns0:fragment	[	rdfs:label	"Onderdeel van" ;
+				ns0:applies-to	ns45:ouder ] , [	ns0:applies-to	rdf:type ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Zoneringsobject" ;
+				ns0:applies-to	ns45:annotaties ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?predicate ?object.\n\t\t\t?object rdfs:label ?olabel.\n\t\t\t<@SUBJECT@> ontro:annotaties ?subject.\n\t\t\t?subject rdfs:label ?subjectlabel\n\t\t}\n\t\twhere {\n\t\t\t{\n\t\t\t\t<@SUBJECT@> ?predicate ?object.\n\t\t\t\tOPTIONAL {?object rdfs:label ?olabel}\n\t\t\t\tFILTER (?predicate = rdf:type\n\t\t\t\t\tor\t?predicate = rdfs:label\n\t\t\t\t\tor\t?predicate = ontro:identificatie\n\t\t\t\t\tor\t?predicate = ontro:plangebied\n\t\t\t\t\tor\t?predicate = ontro:niveau\n\t\t\t\t\tor\t?predicate = ontro:ouder\n#\t\t\t\t\tor\t?predicate = ontro:tekst\n#\t\t\t\t\tor\t?predicate = ontro:volgnummer\n\t\t\t\t)\n\t\t\t\tFILTER (?object != ontro:PlantekstObject)\n\t\t\t}\n\t\t\tUNION\n\t\t\t{\n\t\t\t\t?subject dcterms:source <@SUBJECT@>.\n\t\t\t\t?subject rdfs:label ?subjectlabel\n\t\t\t}\n\t\t}\n\t" .
+ns28:geo
+	ns0:index	"4" ;
+	ns0:query	"\n\t\tprefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tconstruct {\n\t\t\t?vlak geo:geometry ?wkt.\n\t\t\t?vlak rdfs:label ?label\n\t\t}\n\t\twhere {\n\t\t\t?begrip dcterms:source <@SUBJECT@>.\n\t\t\t?vlak ontro:aanduiding ?begrip.\n\t\t\t?vlak ontro:naam ?label.\n\t\t\t?vlak <http://www.opengis.net/ont/geosparql#hasGeometry> ?geo.\n\t\t\t?geo <http://www.opengis.net/ont/geosparql#asWKT> ?wkt.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GeoAppearance .
+ns28:html
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n#\t\tconstruct {\n#\t\t\t<@SUBJECT@> elmo:html ?html\n#\t\t}\n#\t\twhere {\n#\t\t\t<@SUBJECT@> ontro:tekst ?html\n#\t\t}\n\t\tselect ?kind ?vnr concat('<h4>',str(?titel),'</h4>',?tekst) as ?html\n\t\twhere {\n\t\t\tFILTER (?parent = <@SUBJECT@>)\n\t\t\t?kind rdfs:label ?titel.\n\t\t\t?kind ontro:volgnummer ?vnr.\n\t\t\t{\n\t\t\t\t{\n\t\t\t\t\tselect ?kind ?parent\n\t\t\t\t\twhere {\t?kind ontro:ouder ?parent}\n\t\t\t\t}\n\t\t\t\toption (\n\t\t\t\t\ttransitive,\n\t\t\t\t\tt_in(?parent),\n\t\t\t\t\tt_out(?kind),\n\t\t\t\t\tt_distinct,\n\t\t\t\t\tt_min(0)\n\t\t\t\t)\n\t\t\t}\n\t\t\tOPTIONAL {?kind ontro:tekst ?tekst}\n\t\t}\n\t\torder by xsd:integer(?vnr)\n\t" ;
+	ns0:appearance	ns0:HtmlAppearance .
+ns28:normen
+	ns0:fragment	[	rdfs:label	"Norm" ;
+				ns0:applies-to	"normnaam" ] , [	rdfs:label	"Aanduiding" ;
+				ns0:applies-to	"objnaam" ] ;
+	ns0:index	"5" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tselect distinct ?objnaam ?normnaam ?waarde\n\t\twhere {\n\t\t\t?begrip dcterms:source <@SUBJECT@>.\n\t\t\t?vlak ontro:aanduiding ?begrip.\n\t\t\t?obj ontro:bestemmingsvlak ?vlak.\n\t\t\t?obj ontro:naam ?objnaam.\n\t\t\tOPTIONAL {\n\t\t\t\t?norm ontro:aanduiding ?obj.\n\t\t\t\t?norm ?normpred ?waarde.\n\t\t\t\t?normpred rdfs:label ?normnaam.\n\t\t\t\t?normpred rdfs:subPropertyOf ontro:maatvoeringnorm\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns28:tabnav
+	ns0:index	"0" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tselect <@SUBJECT@> as ?tekst ?begrippen ?gebied\n\t\twhere {\n\t\t\t<@SUBJECT@> ontro:werkingsgebied ?gebied.\n\t\t\t<@SUBJECT@> ontro:niveau \"0\".\n\t\t\t?begrippen ontro:werkingsgebied ?gebied.\n\t\t\t?begrippen rdf:type skos:ConceptScheme.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:IndexAppearance .
+ns29:content
+	ns0:fragment	[	rdfs:label	"Norm" ;
+				ns0:applies-to	rdfs:label ;
+				ns0:index	"1" ] , [	rdfs:label	"Type" ;
+				ns0:applies-to	ns45:patroontype ;
+				ns0:index	"2" ] , [	rdfs:label	"Waarde" ;
+				ns0:applies-to	ns45:waarde ;
+				ns0:index	"5" ] , [	rdfs:label	"Bron" ;
+				ns0:applies-to	ns42:source ;
+				ns0:index	"6" ] , [	rdfs:label	"Soort" ;
+				ns0:applies-to	ns45:patroonsoort ;
+				ns0:index	"3" ] , [	rdfs:label	"Functie" ;
+				ns0:applies-to	ns45:patroonfunctie ;
+				ns0:index	"4" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix dcterms: <http://purl.org/dc/terms/>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@>?p?o.\n\t\t\t?o rdfs:label ?o_label.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@>?p?o\n\t\t\tFILTER (?p = rdfs:label or\n\t\t\t\t\t?p = dcterms:source or\n\t\t\t\t\t?p = ontro:patroonsoort or\n\t\t\t\t\t?p = ontro:patroonfunctie or\n\t\t\t\t\t?p = ontro:patroontype or\n\t\t\t\t\t?p = ontro:waarde\n\t\t\t)\n\t\t\tOPTIONAL {\n\t\t\t\t?o rdfs:label ?o_label\n\t\t\t}\n\t\t}\n\t" .
+ns29:geo
+	ns0:fragment	[	ns0:applies-to	"default" ;
+				ns43:stylesheet	"\n\t\t\tfill: blue;\n\t\t\tfill-opacity: .2;\n\t\t\tstroke-width: 1;\n\t\t" ] ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tprefix geosparql: <http://www.opengis.net/ont/geosparql#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix html: <http://www.w3.org/1999/xhtml/vocab#>\n\t\tconstruct {\n\t\t\t?sgeo elmo:style <urn:default>.\n\t\t\t?sgeo html:link ?vlak.\n\t\t\t<urn:default> elmo:name \"defaultx\".\n\t\t\t?sgeo geo:geometry ?wkt.\n\t\t\t?sgeo rdfs:label ?label\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> ontro:werkingsgebied ?vlak.\n\t\t\t?vlak geosparql:hasGeometry ?sgeo.\n\t\t\t?vlak rdfs:label ?label.\n\t\t\t?sgeo geosparql:asWKT ?wkt.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GeoAppearance .
+ns27:Tekstpatroon
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns45:Tekstpatroon ] ;
+	ns0:contains	ns4:header , ns4:nav , ns29:content , ns29:geo .
+ns30:tabnav
+	ns0:index	"0" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tselect ?tekst ?begrippen <@SUBJECT@> as ?gebied\n\t\twhere {\n\t\t\t?tekst ontro:werkingsgebied <@SUBJECT@>.\n\t\t\t?tekst ontro:niveau \"0\".\n\t\t\t?begrippen ontro:werkingsgebied <@SUBJECT@>.\n\t\t\t?begrippen rdf:type skos:ConceptScheme.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:IndexAppearance .
+ns31:geo
+	ns0:fragment	[	ns0:applies-to	"default" ;
+				ns43:stylesheet	"\n\t\t\tfill: blue;\n\t\t\tfill-opacity: .2;\n\t\t\tstroke-width: 1;\n\t\t" ] ;
+	ns0:index	"3" ;
+	ns0:query	"\n\t\tprefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tprefix geosparql: <http://www.opengis.net/ont/geosparql#>\n\t\tprefix elmo: <http://bp4mc2.org/elmo/def#>\n\t\tprefix html: <http://www.w3.org/1999/xhtml/vocab#>\n\t\tconstruct {\n\t\t\t?sgeo elmo:style <urn:default>.\n\t\t\t?sgeo html:link ?vlak.\n\t\t\t<urn:default> elmo:name \"defaultx\".\n\t\t\t?sgeo geo:geometry ?wkt.\n\t\t\t?sgeo rdfs:label ?label\n\t\t}\n\t\twhere {\n\t\t\t{\n\t\t\t\tselect ?vlak ?sgeo ?wkt ?label\n\t\t\t\twhere {\n\t\t\t\t\t?vlak ontro:bovenliggendGebied <@SUBJECT@>.\n\t\t\t\t\t?vlak rdfs:label ?label.\n\t\t\t\t\t?vlak geosparql:hasGeometry ?sgeo.\n\t\t\t\t\t?sgeo geosparql:asWKT ?wkt.\n\t\t\t\t}\n\t\t\t\tlimit 200\n\t\t\t}\n\t\t\tUNION\n\t\t\t{\n\t\t\t\tselect ?vlak ?sgeo ?wkt ?label\n\t\t\t\twhere {\n\t\t\t\t\t<@SUBJECT@> geosparql:hasGeometry ?sgeo.\n\t\t\t\t\t<@SUBJECT@> rdfs:label ?label.\n\t\t\t\t\t?sgeo geosparql:asWKT ?wkt.\n\t\t\t\t\tBIND (<@SUBJECT@> as ?vlak)\n\t\t\t\t}\n\t\t\t\tlimit 200\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GeoAppearance .
+ns31:content
+	ns0:fragment	[	ns0:applies-to	ns45:labelPoint ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Zoneringsobject" ;
+				ns0:applies-to	ns45:aanduiding ;
+				ns0:index	"2" ] , [	ns0:applies-to	ns45:verwijzingNaarTekstInfo ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	ns0:applies-to	ogcgs:hasGeometry ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Identificatie" ;
+				ns0:applies-to	ns45:identificatie ;
+				ns0:index	"1" ] , [	rdfs:label	"Bevindt zich binnen" ;
+				ns0:applies-to	ns45:bovenliggendGebied ;
+				ns0:index	"3" ] , [	rdfs:label	"Omvat onder meer" ;
+				ns0:applies-to	ns45:onderliggendGebied ;
+				ns0:index	"4" ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	ns0:applies-to	rdf:type ;
+				ns0:appearance	ns0:HiddenAppearance ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?predicate ?object.\n\t\t\t?object rdfs:label ?olabel.\n\t\t\t<@SUBJECT@> ontro:onderliggendGebied ?vlak.\n\t\t\t?vlak rdfs:label ?vlabel.\n\t\t}\n\t\twhere {\n\t\t\t{\n\t\t\t\t<@SUBJECT@> ?predicate ?object.\n\t\t\t\tOPTIONAL {?object rdfs:label ?olabel}\n\t\t\t}\n\t\t\tUNION\n\t\t\t{\n\t\t\t\tselect ?vlak ?vlabel\n\t\t\t\twhere {\n\t\t\t\t\t?vlak ontro:bovenliggendGebied <@SUBJECT@>.\n\t\t\t\t\t?vlak rdfs:label ?vlabel\n\t\t\t\t}\n\t\t\t\tlimit 4\n\t\t\t}\n\t\t\t\n\t\t}\n\t" .
+ns31:normen
+	ns0:fragment	[	rdfs:label	"Type norm" ;
+				ns0:applies-to	"ps" ] , [	rdfs:label	"Norm" ;
+				ns0:applies-to	"norm" ] , [	rdfs:label	"Waarde" ;
+				ns0:applies-to	"waarde" ] ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix ontro: <http://goal.localhost/ro/def/imor#>\n\t\tselect ?ps ?norm ?norm_label ?waarde\n\t\twhere {\n\t\t\t?norm rdf:type ontro:Tekstpatroon.\n\t\t\t?norm ontro:werkingsgebied <@SUBJECT@>.\n\t\t\t?norm rdfs:label ?norm_label.\n\t\t\t?norm ontro:waarde ?waarde.\n\t\t\t?norm ontro:patroonsoort ?ps.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns27:Werkingsgebied
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns45:Werkingsgebied ] ;
+	ns0:contains	ns4:header , ns4:nav , ns30:tabnav , ns31:geo , ns31:content , ns31:normen .
+ns32:content
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix np: <http://data.test.pdok.nl/ldt/def/nationaleparken#>\n\t\tselect ?nr ?park ?park_label ?instrument ?datum ?bron count(?gebied) as ?gebieden\n\t\twhere {\n\t\t\t?park rdf:type np:NationaalPark.\n\t\t\t?park np:naam ?park_label.\n\t\t\t?park np:nr ?nr.\n\t\t\t?park np:instrument ?instrument.\n\t\t\t?park np:datum ?datum.\n\t\t\t?park np:bron ?bron.\n\t\t\t?park np:omvat ?gebied.\n\t\t}\n\t" .
+ns33:nationaleparken
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns32:content ;
+	ns0:url-pattern	"/ldt/query/nationaleparken$" .
+ns34:content
+	ns0:fragment	[	rdfs:label	"Begin geldigheid" ;
+				ns0:applies-to	ns44:objectBeginTijd ;
+				ns0:index	"6" ] , [	rdfs:label	"Bron" ;
+				ns0:applies-to	ns44:bron ;
+				ns0:index	"4" ] , [	rdfs:label	"Visualisatiecode" ;
+				ns0:applies-to	ns44:visualisatieCode ;
+				ns0:index	"5" ] , [	rdfs:label	"Naam" ;
+				ns0:applies-to	ns44:naam ;
+				ns0:index	"2" ] , [	rdfs:label	"Type" ;
+				ns43:link	"resource" ;
+				ns0:applies-to	rdf:type ;
+				ns0:index	"3" ] , [	ns0:applies-to	rdfs:label ;
+				ns0:appearance	ns0:HiddenAppearance ] , [	rdfs:label	"Identificatie" ;
+				ns0:applies-to	ns44:identificatie ;
+				ns0:index	"1" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix brt: <http://brt.kadaster.nl/def/imbrt#>\n\t\tconstruct {\n\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t?o rdfs:label ?ol.\n\t\t}\n\t\twhere {\n\t\t\tgraph <http://brt.kadaster.nl/id/dataset/top10nl_30O> {\n\t\t\t\t<@SUBJECT@> ?p?o.\n\t\t\t\tFILTER (?p = rdf:type\n\t\t\t\t\tor\t?p = rdfs:label\n\t\t\t\t\tor\t?p = brt:bron\n\t\t\t\t\tor\t?p = brt:identificatie\n\t\t\t\t\tor\t?p = brt:naam\n\t\t\t\t\tor\t?p = brt:objectBeginTijd\n\t\t\t\t\tor\t?p = brt:visualisatieCode\n\t\t\t\t)\n\t\t\t\tOPTIONAL {\n\t\t\t\t\t?o rdfs:label ?ol\n\t\t\t\t}\n\t\t\t}\n\t\t\toptional {\n\t\t\t\tgraph <http://brt.kadaster.nl/imbrt/doc> {\n\t\t\t\t\t?o rdfs:label ?ol\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns34:geo
+	rdf:type	ns0:Representation ;
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tconstruct {\n\t\t\t?geo geo:geometry ?wktgeo.\n\t\t\t?geo rdfs:label ?label.\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> ogc:hasGeometry ?geo.\n\t\t\t<@SUBJECT@> rdfs:label ?label.\n\t\t\t?geo ogc:asWKT ?wktgeo.\n\t\t}\n\t" ;
+	ns0:endpoint	ns8:sparql ;
+	ns0:appearance	ns0:GeoAppearance .
+ns20:GeoObject
+	rdf:type	ns0:Representation ;
+	ns0:applies-to	[	rdf:type	ns44:Gebouw ] , [	rdf:type	ns44:Waterdeel ] , [	rdf:type	ns44:Terrein ] , [	rdf:type	ns44:FunctioneelGebied ] , [	rdf:type	ns44:GeografischGebied ] , [	rdf:type	ns44:Wegdeel ] , [	rdf:type	ns44:Spoorbaandeel ] ;
+	ns0:contains	ns4:header , ns4:nav , ns34:content , ns34:geo ;
+	ns0:uri-pattern	"^http://brt.kadaster.nl/id/GeoObject/" .
+ns17:voorbeelden
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav ;
+	ns0:fragment	[	rdfs:label	"Geo-object" ;
+				ns0:applies-to	"obj" ] ;
+	ns0:query	"\n\t\tprefix brt: <http://brt.kadaster.nl/def/imbrt#>\n\t\tselect distinct ?obj ?obj_label\n\t\twhere {\n\t\t\tgraph <http://brt.kadaster.nl/id/dataset/top10nl_30O> {\n\t\t\t\t?obj rdf:type <@SUBJECT@>.\n\t\t\t\t?obj rdfs:label ?obj_label\n\t\t\t}\n\t\t}\n\t\tlimit 10\n\t" ;
+	ns0:url-pattern	"^http://brt.kadaster.nl/query/voorbeelden$" , "/ldt/brt/query/voorbeelden$" , "^http://brt.localhost/query/voorbeelden$" ;
+	ns0:endpoint	ns8:sparql .
+ns35:begrippen
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns36:index , ns36:content ;
+	ns0:url-pattern	"^http://bag.kadaster.nl/query/begrippen$" , "/ldt/bag/query/begrippen" , "^http://bag.localhost/query/begrippen$" .
+ns36:index
+	ns0:index	"1" ;
+	ns0:appearance	ns0:IndexAppearance ;
+	ns0:data	[	rdfs:label	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|alle begrippen" ;
+				rdf:value	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|" ;
+				ns43:link	"/ldt/bag/query/begrippen" ;
+				ns0:name	"term" ] .
+ns36:content
+	ns0:index	"2" ;
+	ns0:query	"\n\t\tselect ?begrip ?begrip_label ?uitleg\n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t?begrip rdf:type skos:Concept.\n\t\t\t\t?begrip rdfs:label ?begrip_label.\n\t\t\t\tOPTIONAL {?begrip skos:definition ?uitleg}\n\t\t\t\tFILTER regex(?begrip_label,'^[^a-z]*@TERM@','i').\n\t\t\t}\n\t\t\tfilter (?g = <http://bag.kadaster.nl/id/dataset/begrippen>\n\t\t\t)\n\t\t}\n\t" ;
+	ns0:appearance	ns0:ShortTableAppearance .
+ns35:woonplaatsen
+	rdf:type	ns0:Representation ;
+	ns0:contains	ns4:header , ns4:nav , ns37:index , ns37:content ;
+	ns0:url-pattern	"^http://bag.kadaster.nl/query/woonplaatsen$" , "^http://bag.localhost/query/woonplaatsen$" , "/ldt/bag/query/woonplaatsen$" .
+ns37:index
+	ns0:index	"1" ;
+	ns0:appearance	ns0:IndexAppearance ;
+	ns0:data	[	rdfs:label	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z" ;
+				rdf:value	"a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z" ;
+				ns43:link	"/ldt/bag/query/woonplaatsen" ;
+				ns0:name	"term" ] .
+ns37:content
+	ns0:fragment	[	rdfs:label	"Woonplaats"@nl , "City"@en ;
+				ns0:applies-to	"w" ] , [	rdfs:label	"Code" ;
+				ns0:applies-to	"id" ] ;
+	ns0:index	"1" ;
+	ns0:query	"\n\t\tprefix bag: <http://bag.kadaster.nl/def#>\n\t\tselect distinct ?w ?w_label ?id \n\t\twhere {\n\t\t\tgraph ?g {\n\t\t\t\t?w rdf:type bag:Woonplaats.\n\t\t\t\t?w bag:woonplaatsnaam ?w_label.\n\t\t\t\t?w bag:identificatiecode ?id\n\t\t\t\tFILTER regex(?w_label,'^[^a-z]*@TERM@','i').\n\t\t\t}\n\t\t}\n\t\tlimit 2000\n\t" ;
+	ns0:endpoint	ns8:sparql .
+ns1:geo
+	ns0:index	"4" ;
+	ns0:query	"\n\t\tprefix ogc: <http://www.opengis.net/ont/geosparql#>\n\t\tprefix html: <http://www.w3.org/1999/xhtml/vocab#>\n\t\tconstruct {\n\t\t\t?geo geo:geometry ?wktgeo.\n\t\t\t?geo rdfs:label \"GEO\".\n\t\t\t?geo html:link <@SUBJECT@>\n\t\t}\n\t\twhere {\n\t\t\t<@SUBJECT@> ogc:hasGeometry ?geo.\n\t\t\t?geo ogc:asWKT ?wktgeo.\n\t\t}\n\t" ;
+	ns0:appearance	ns0:GeoAppearance .
