@@ -21,7 +21,7 @@
 # along with the Linked Data Theatre.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FROM maven:3-jdk-7
+FROM java:openjdk-7-jdk
 MAINTAINER Rein <rein.van.t.veer@geodan.nl>
 
 RUN apt-get update \
@@ -29,6 +29,7 @@ RUN apt-get update \
         wget \
         pwgen \
         ca-certificates \
+        maven \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
