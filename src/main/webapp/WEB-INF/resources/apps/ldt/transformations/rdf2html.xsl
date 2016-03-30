@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2html.xsl
-    VERSION  1.5.0
-    DATE     2016-01-05
+    VERSION  1.6.2
+    DATE     2016-03-16
 
     Copyright 2012-2016
 
@@ -95,6 +95,7 @@
 		<xsl:when test="$urlpart=''"><xsl:value-of select="$docroot"/><xsl:value-of select="$subdomain"/>/resource?subject=<xsl:value-of select="encode-for-uri($uri)"/></xsl:when> <!-- Make non-dereferenceable uri's locally dereferenceable -->
 		<xsl:when test="$var/@elmo:appearance='http://bp4mc2.org/elmo/def#GlobalLink'"><xsl:value-of select="$uri"/></xsl:when> <!-- Global link, so plain uri -->
 		<xsl:when test="$domain!=$serverdomain"><xsl:value-of select="$docroot"/><xsl:value-of select="$subdomain"/>/resource?subject=<xsl:value-of select="encode-for-uri($uri)"/></xsl:when> <!-- External uri's are treated as non-dereferenceable -->
+		<xsl:when test="matches($uri,'#')"><xsl:value-of select="$docroot"/><xsl:value-of select="$subdomain"/>/resource?subject=<xsl:value-of select="encode-for-uri($uri)"/></xsl:when> <!-- Hash uri's are treated as non-dereferenceable (to avoid losing the part after the hash) -->
 		<xsl:otherwise><xsl:value-of select="$uri"/></xsl:otherwise> <!--Plain URI -->
 	</xsl:choose>
 </xsl:template>
@@ -116,7 +117,7 @@
 	<xsl:param name="stylesheet"/>
 	<xsl:param name="appearance"/>
 	<xsl:variable name="termlist" select="key('rdf',$glossary)"/>
-	<!-- Tokenizer bestaat uit alle woorden die gekozen kunnen worden, conform de syntax van de replace functie -->
+	<!-- Tokenizer consists of all the words that can be chosen, conform the syntax of the replace function -->
 	<xsl:variable name="tokenizer">
 		<xsl:for-each select="$termlist/rdf:Description"><xsl:sort select="string-length(elmo:name[1])" order="descending"/>
 			<xsl:if test="not($appearance='http://bp4mc2.org/elmo/def#FilteredGlossaryAppearance') or exists(*[@rdf:resource=$uri])">
@@ -155,6 +156,10 @@
 
 <xsl:template match="*" mode="object">
 	<xsl:choose>
+		<!-- Image -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
+			<img src="{@rdf:resource}"/>
+		</xsl:when>
 		<!-- Reference to another resource, without a label -->
 		<xsl:when test="exists(@rdf:resource)">
 			<xsl:variable name="resource-uri">
@@ -165,7 +170,6 @@
 			</xsl:variable>
 			<a href="{$resource-uri}">
 				<xsl:choose>
-					<!-- <xsl:when test="exists(key('resource',@rdf:resource)/rdfs:label)"><xsl:value-of select="key('resource',@rdf:resource)/rdfs:label"/></xsl:when> -->
 					<xsl:when test="@rdfs:label!=''"><xsl:value-of select="@rdfs:label"/></xsl:when>
 					<xsl:otherwise><xsl:value-of select="@rdf:resource"/></xsl:otherwise>
 				</xsl:choose>
@@ -218,7 +222,11 @@
 				<xsl:with-param name="appearance" select="@elmo:appearance"/>
 			</xsl:apply-templates>
 		</xsl:when>
-		<!-- Literal -->
+		<!-- HTML -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HtmlAppearance'">
+			<xsl:variable name="html">&lt;div&gt;<xsl:value-of select="."/>&lt;/div&gt;</xsl:variable>
+			<xsl:copy-of select="saxon:parse($html)" xmlns:saxon="http://saxon.sf.net/"/>
+		</xsl:when>
 		<xsl:otherwise>
 			<!-- If new lines are included, include them in resulting html -->
 			<xsl:for-each select="tokenize(replace(.,'\n+$',''),'\n')">
@@ -229,72 +237,89 @@
 	</xsl:choose>
 </xsl:template>
 
+<xsl:template match="rdf:RDF" mode="present">
+	<xsl:choose>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HiddenAppearance'"/> <!-- Hidden, dus niet tonen -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HeaderAppearance'"/> <!-- Al gedaan -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarAppearance'"/> <!-- Al gedaan -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarSearchAppearance'"/> <!-- Al gedaan -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#TreeAppearance'"/> <!-- Al gedaan -->
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#LoginAppearance'">
+			<xsl:apply-templates select="." mode="LoginAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#CarouselAppearance'">
+			<xsl:apply-templates select="." mode="CarouselAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ShortTableAppearance'">
+			<xsl:apply-templates select="." mode="TableAppearance"><xsl:with-param name="paging">false</xsl:with-param></xsl:apply-templates>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#TableAppearance' or @elmo:appearance='http://bp4mc2.org/elmo/def#TextSearchAppearance'">
+			<xsl:apply-templates select="." mode="TableAppearance"><xsl:with-param name="paging">true</xsl:with-param></xsl:apply-templates>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#IndexAppearance'">
+			<xsl:apply-templates select="." mode="IndexAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HtmlAppearance'">
+			<xsl:apply-templates select="." mode="HtmlAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#GraphAppearance'">
+			<xsl:apply-templates select="." mode="GraphAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#TextAppearance'">
+			<xsl:apply-templates select="." mode="TextAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#FormAppearance'">
+			<xsl:apply-templates select="." mode="FormAppearance"/>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#GeoAppearance' or @elmo:appearance='http://bp4mc2.org/elmo/def#GeoSelectAppearance'">
+			<xsl:apply-templates select="." mode="GeoAppearance"><xsl:with-param name="backmap">brt</xsl:with-param><xsl:with-param name="appearance" select="substring-after(@elmo:appearance,'http://bp4mc2.org/elmo/def#')"/></xsl:apply-templates>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
+			<xsl:apply-templates select="." mode="GeoAppearance"><xsl:with-param name="backmap">image</xsl:with-param><xsl:with-param name="appearance">ImageAppearance</xsl:with-param></xsl:apply-templates>
+		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ChartAppearance'">
+			<xsl:apply-templates select="." mode="ChartAppearance"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<!-- No, or an unknown appearance, use the data to select a suitable appearance -->
+			<xsl:apply-templates select="." mode="ContentAppearance"/>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
+
 <xsl:template match="/">
 	<xsl:for-each select="results">
 		<html lang="{context/language}">
 			<xsl:apply-templates select="." mode="html-head"/>
 			<body>
-			<div id="page">
-			<!-- Meerdere queries zijn mogelijk -->
-			<!-- Eerst de headerstuf -->
-			<!-- Meer dan 1 navbar leid tot niet-gedefinieerd gedrag -->
-			<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#HeaderAppearance']" mode="HeaderAppearance"/>
-			<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarAppearance']" mode="NavbarAppearance"/>
-			<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarSearchAppearance']" mode="NavbarSearchAppearance"/>
-			<!-- Dan de echte inhoud -->
-			<div class="content">
-			<div class="container">
-				<xsl:for-each select="rdf:RDF">
-					<xsl:choose>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HiddenAppearance'"/> <!-- Hidden, dus niet tonen -->
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HeaderAppearance'"/> <!-- Al gedaan -->
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarAppearance'"/> <!-- Al gedaan -->
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarSearchAppearance'"/> <!-- Al gedaan -->
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#LoginAppearance'">
-							<xsl:apply-templates select="." mode="LoginAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#CarouselAppearance'">
-							<xsl:apply-templates select="." mode="CarouselAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ShortTableAppearance'">
-							<xsl:apply-templates select="." mode="TableAppearance"><xsl:with-param name="paging">false</xsl:with-param></xsl:apply-templates>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#TableAppearance' or @elmo:appearance='http://bp4mc2.org/elmo/def#TextSearchAppearance'">
-							<xsl:apply-templates select="." mode="TableAppearance"><xsl:with-param name="paging">true</xsl:with-param></xsl:apply-templates>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#IndexAppearance'">
-							<xsl:apply-templates select="." mode="IndexAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#HtmlAppearance'">
-							<xsl:apply-templates select="." mode="HtmlAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#GraphAppearance'">
-							<xsl:apply-templates select="." mode="GraphAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#TextAppearance'">
-							<xsl:apply-templates select="." mode="TextAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#FormAppearance'">
-							<xsl:apply-templates select="." mode="FormAppearance"/>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#GeoAppearance'">
-							<xsl:apply-templates select="." mode="GeoAppearance"><xsl:with-param name="backmap">brt</xsl:with-param></xsl:apply-templates>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
-							<xsl:apply-templates select="." mode="GeoAppearance"><xsl:with-param name="backmap">image</xsl:with-param></xsl:apply-templates>
-						</xsl:when>
-						<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ChartAppearance'">
-							<xsl:apply-templates select="." mode="ChartAppearance"/>
-						</xsl:when>
-						<xsl:otherwise>
-							<!-- No, or an unknown appearance, use the data to select a suitable appearance -->
-							<xsl:apply-templates select="." mode="ContentAppearance"/>
-						</xsl:otherwise>
-					</xsl:choose>
-				</xsl:for-each>
-			</div>
-			</div>
-			</div>
+				<div id="page">
+					<!-- Meerdere queries zijn mogelijk -->
+					<!-- Eerst de headerstuf -->
+					<!-- Meer dan 1 navbar leid tot niet-gedefinieerd gedrag -->
+					<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#HeaderAppearance']" mode="HeaderAppearance"/>
+					<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarAppearance']" mode="NavbarAppearance"/>
+					<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#NavbarSearchAppearance']" mode="NavbarSearchAppearance"/>
+					<!-- Dan de echte inhoud -->
+					<div class="content">
+						<div class="container">
+							<xsl:choose>
+								<xsl:when test="exists(rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#TreeAppearance'])">
+									<div class="row">
+										<div class="col-md-4">
+											<xsl:apply-templates select="rdf:RDF[@elmo:appearance='http://bp4mc2.org/elmo/def#TreeAppearance']" mode="TreeAppearance"/>
+										</div>
+										<div class="col-md-8">
+											<xsl:apply-templates select="rdf:RDF" mode="present"/>
+										</div>
+									</div>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:apply-templates select="rdf:RDF" mode="present"/>
+								</xsl:otherwise>
+							</xsl:choose>
+						</div>
+					</div>
+				</div>
 			</body>
 		</html>
 	</xsl:for-each>
@@ -335,12 +360,6 @@
 
 		<xsl:apply-templates select="context" mode="datatable-languageset"/>
 		
-		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-		<!--[if lt IE 9]>
-		  <script src="/js/html5shiv.min.js"></script>
-		  <script src="/js/respond.min.js"></script>
-		<![endif]-->
 	</head>
 </xsl:template>
 
@@ -570,10 +589,22 @@
 <xsl:template match="rdf:RDF" mode="TableAppearance">
 	<xsl:param name="paging"/>
 	<!-- Link for other formats -->
+	<!-- Original, changed
 	<xsl:variable name="original-link">
 		<xsl:value-of select="$docroot"/>
 		<xsl:text>/resource?subject=</xsl:text><xsl:value-of select="encode-for-uri(../context/subject)"/>
 		<xsl:text>&amp;representation=</xsl:text><xsl:value-of select="encode-for-uri(@elmo:query)"/>
+		<xsl:text>&amp;format=</xsl:text>
+	</xsl:variable>
+	-->
+	<xsl:variable name="original-link">
+		<xsl:value-of select="../context/url"/>
+		<xsl:text>?</xsl:text>
+		<xsl:for-each select="../context/parameters/parameter"> <!-- This doesn't work if the subject is given as a parameter! -->
+			<xsl:value-of select="name"/>=<xsl:value-of select="encode-for-uri(value)"/>
+			<xsl:text>&amp;</xsl:text>
+		</xsl:for-each>
+		<xsl:text>representation=</xsl:text><xsl:value-of select="encode-for-uri(@elmo:query)"/>
 		<xsl:text>&amp;format=</xsl:text>
 	</xsl:variable>
 	<!-- A select query will have @rdf:nodeID elements, with id 'rset' -->
@@ -602,15 +633,37 @@
 						</tr>
 					</thead>
 					<tbody>
-						<xsl:for-each select="res:solution">
-							<tr>
-								<xsl:variable name="binding" select="res:binding"/>
-								<xsl:for-each select="../res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
-									<xsl:variable name="var" select="."/>
-									<td><xsl:apply-templates select="$binding[res:variable=$var]" mode="tableobject"/></td>
+						<xsl:choose>
+							<xsl:when test="exists(res:resultVariable[@elmo:name='SUBJECT'])">
+								<xsl:variable name="key" select="res:resultVariable[@elmo:name='SUBJECT'][1]"/>
+								<xsl:for-each-group select="res:solution" group-by="res:binding[res:variable=$key]/res:value/@rdf:resource">
+									<tr>
+										<xsl:variable name="group" select="current-group()"/>
+										<xsl:for-each select="../res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
+											<xsl:variable name="var" select="."/>
+											<td>
+												<!-- Remove duplicates, so still a for-each-group -->
+												<xsl:for-each-group select="$group/res:binding[res:variable=$var]" group-by="concat(res:value,res:value/@rdf:resource)">
+													<xsl:if test="position()!=1">, </xsl:if>
+													<xsl:apply-templates select="." mode="tableobject"/>
+												</xsl:for-each-group>
+											</td>
+										</xsl:for-each>
+									</tr>
+								</xsl:for-each-group>
+							</xsl:when>
+							<xsl:otherwise>
+								<xsl:for-each select="res:solution">
+									<tr>
+										<xsl:variable name="binding" select="res:binding"/>
+										<xsl:for-each select="../res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
+											<xsl:variable name="var" select="."/>
+											<td><xsl:apply-templates select="$binding[res:variable=$var]" mode="tableobject"/></td>
+										</xsl:for-each>
+									</tr>
 								</xsl:for-each>
-							</tr>
-						</xsl:for-each>
+							</xsl:otherwise>
+						</xsl:choose>
 					</tbody>
 				</table>
 				<a href="{$original-link}xlsx">Excel</a>
@@ -1116,6 +1169,19 @@ var substringMatcher = function(strs) {
 					<xsl:if test="exists(rdf:Description/elmo:valueDatatype[@rdf:resource='http://purl.org/dc/dcmitype/Dataset'])">
 						<xsl:attribute name="enctype">multipart/form-data</xsl:attribute>
 					</xsl:if>
+					<xsl:variable name="turtleEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#TurtleEditor']/elmo:applies-to"/>
+					<xsl:variable name="sparqlEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#SparqlEditor']/elmo:applies-to"/>
+					<xsl:if test="$turtleEditorID!=''">
+						<link rel="stylesheet" href="{$docroot}/css/codemirror.css"/>
+						<script src="{$docroot}/js/codemirror.js"/>
+						<script src="{$docroot}/js/turtle.js"/>
+					</xsl:if>
+					<xsl:if test="$sparqlEditorID!=''">
+						<link rel="stylesheet" href="{$docroot}/css/codemirror.css"/>
+						<link rel="stylesheet" href="{$docroot}/css/yasqe.min.css"/>
+						<script src="{$docroot}/js/codemirror.js"/>
+						<script src="{$docroot}/js/yasqe.min.js"/>
+					</xsl:if>
 					<xsl:for-each select="rdf:Description[exists(elmo:applies-to)]"><xsl:sort select="elmo:index"/>
 						<xsl:variable name="applies-to" select="elmo:applies-to"/>
 						<div class="form-group">
@@ -1161,6 +1227,7 @@ var substringMatcher = function(strs) {
 									</xsl:when>
 									<xsl:when test="elmo:valueDatatype/@rdf:resource='http://www.w3.org/2001/XMLSchema#String'">
 										<textarea type="text" class="form-control" id="{elmo:applies-to}" name="{elmo:applies-to}" rows="30">
+											<xsl:if test="html:stylesheet!=''"><xsl:attribute name="style"><xsl:value-of select="html:stylesheet"/></xsl:attribute></xsl:if>
 											<xsl:value-of select="rdf:value"/>
 										</textarea>
 									</xsl:when>
@@ -1180,6 +1247,12 @@ var substringMatcher = function(strs) {
 						</div>
 					</xsl:for-each>
 					<script>$('.datepicker').datepicker({language: '<xsl:value-of select="/results/context/language"/>'});</script>
+					<xsl:if test="$turtleEditorID!=''">
+						<script>var editor = CodeMirror.fromTextArea(document.getElementById("<xsl:value-of select="$turtleEditorID"/>"), {mode: "text/turtle",matchBrackets: true,lineNumbers:true});</script>
+					</xsl:if>
+					<xsl:if test="$sparqlEditorID!=''">
+						<script>var editor = new YASQE.fromTextArea(document.getElementById("<xsl:value-of select="$sparqlEditorID"/>"), {persistent: null});</script>
+					</xsl:if>
 				</form>
 			</div>
 		</div>
@@ -1212,35 +1285,35 @@ var substringMatcher = function(strs) {
 
 <xsl:template match="rdf:RDF" mode="GeoAppearance">
 	<xsl:param name="backmap"/>
+	<xsl:param name="appearance"/>
 
 	<xsl:if test="exists(rdf:Description/@rdf:about)">
 
 		<xsl:choose>
 			<xsl:when test="$backmap='image'">
-				<!-- Er zit een bug in versie 0.7 van leaflet waardoor cirkels niet goed worden gesized, vandaar versie 1.0.0 -->
-				<!-- We gebruiken nu sowieso 1.0.0-b2 -->
 				<link href="{$docroot}/css/leaflet.css" rel="stylesheet"/>
 				<script src="{$docroot}/js/leaflet.js"></script>
 				<script src="{$docroot}/js/leaflet.label.js"></script>
 				<script src="{$docroot}/js/easy-button.js"></script>
-				<!-- Probeersel om zaken te printen -->
-				<form id="svgform" method="post" action="{$subdomain}/print-graph">
+				<!-- Print form -->
+				<form id="svgform" method="post" action="{$subdomain}/print-graph" enctype="multipart/form-data">
 					<input type="hidden" id="type" name="type" value=""/>
 					<input type="hidden" id="data" name="data" value=""/>
-					<input type="hidden" id="imgwidth" name="imgwidth" value=""/>
-					<input type="hidden" id="imgheight" name="imgheight" value=""/>
+					<input type="hidden" id="dimensions" name="dimensions" value=""/>
 					<input type="hidden" id="imgsrc" name="imgsrc" value=""/>
 				</form>
 				<!-- TOT HIER -->
 			</xsl:when>
 			<xsl:otherwise>
-				<!-- Versie 1.0.0 van leaflet en proj4leaflet werken niet goed samen, dus hier de oude 0.7 versie -->
-				<!-- Lijkt nu opgelost, we gebruiken standaard 1.0.0-b2 -->
 				<link href="{$docroot}/css/leaflet.css" rel="stylesheet"/>
 				<script src="{$docroot}/js/leaflet.js"></script>
 				<script src="{$docroot}/js/proj4-compressed.js"></script>
 				<script src="{$docroot}/js/proj4leaflet.js"></script>
-				<!-- <script src="{$docroot}/js/leaflet.label.js"></script> -->
+				<!-- Clickable map form -->
+				<form id="clickform" method="get" action="">
+					<input type="hidden" id="lat" name="lat" value=""/>
+					<input type="hidden" id="long" name="long" value=""/>
+				</form>
 			</xsl:otherwise>
 		</xsl:choose>
 		<script src="{$docroot}/js/linkeddatamap.js"></script>
@@ -1251,8 +1324,10 @@ var substringMatcher = function(strs) {
 			<xsl:if test="not($latlocator!='')"><xsl:value-of select="rdf:Description[1]/geo:lat"/></xsl:if>
 		</xsl:variable>
 		<xsl:variable name="lat">
-			<xsl:value-of select="$latdata"/>
-			<xsl:if test="not($latdata!='')">52</xsl:if>
+			<xsl:choose>
+				<xsl:when test="not($latdata!='') or contains($latdata,'@')">52.155</xsl:when>
+				<xsl:otherwise><xsl:value-of select="$latdata"/></xsl:otherwise>
+			</xsl:choose>
 		</xsl:variable>
 		<xsl:variable name="longlocator" select="rdf:Description[rdf:type/@rdf:resource='http://bp4mc2.org/elmo/def#GeoLocator'][1]/geo:long"/>
 		<xsl:variable name="longdata">
@@ -1260,8 +1335,10 @@ var substringMatcher = function(strs) {
 			<xsl:if test="not($longlocator!='')"><xsl:value-of select="rdf:Description[1]/geo:long"/></xsl:if>
 		</xsl:variable>
 		<xsl:variable name="long">
-			<xsl:value-of select="$longdata"/>
-			<xsl:if test="not($longdata!='')">6</xsl:if>
+			<xsl:choose>
+				<xsl:when test="not($longdata!='') or contains($longdata,'@')">5.38</xsl:when>
+				<xsl:otherwise><xsl:value-of select="$longdata"/></xsl:otherwise>
+			</xsl:choose>
 		</xsl:variable>
 		<xsl:variable name="doZoom">
 			<xsl:choose>
@@ -1309,7 +1386,7 @@ var substringMatcher = function(strs) {
 							</xsl:when>
 							<xsl:otherwise>
 								.leaflet-container {
-									height: 300px;
+									height: 500px;
 									width: 100%;
 								}
 							</xsl:otherwise>
@@ -1351,7 +1428,7 @@ var substringMatcher = function(strs) {
 							addEdge('<xsl:value-of select="../@rdf:about"/>','<xsl:value-of select="name()"/>','<xsl:value-of select="@rdf:resource"/>');
 						</xsl:for-each>
 						
-						showLocations(<xsl:value-of select="$doZoom"/>);
+						showLocations(<xsl:value-of select="$doZoom"/>,'<xsl:value-of select="$appearance"/>');
 					</script>
 				</div>
 			</div>
@@ -1437,6 +1514,70 @@ var substringMatcher = function(strs) {
 			  .attr("height", function(d) { return height - y(d.value); })
 			  .attr("width", x.rangeBand());
 	</script>
+</xsl:template>
+
+<xsl:template match="rdf:Description" mode="makeTree">
+	<!-- To avoid cycles, a resource can be present only ones -->
+	<xsl:param name="done"/>
+	<xsl:variable name="uri" select="@rdf:about"/>
+	<xsl:variable name="resource-uri">
+		<xsl:call-template name="resource-uri">
+			<xsl:with-param name="uri" select="$uri"/>
+			<xsl:with-param name="var" select=".."/> <!-- Was rdf:Description, maar dit lijkt beter -->
+		</xsl:call-template>
+	</xsl:variable>
+	<li>
+		<a href="{$resource-uri}">
+			<xsl:choose>
+				<xsl:when test="rdfs:label!=''"><xsl:value-of select="rdfs:label"/></xsl:when>
+				<xsl:otherwise><xsl:value-of select="@rdf:about"/></xsl:otherwise>
+			</xsl:choose>
+			<xsl:call-template name="cross-site-marker">
+				<xsl:with-param name="url" select="$resource-uri"/>
+			</xsl:call-template>
+		</a>
+		<xsl:variable name="new">
+			<xsl:for-each select="../rdf:Description[*/@rdf:resource=$uri]">
+				<xsl:variable name="about" select="@rdf:about"/>
+				<xsl:if test="not(exists($done[uri=$about]))">
+					<uri><xsl:value-of select="."/></uri>
+				</xsl:if>
+			</xsl:for-each>
+		</xsl:variable>
+		<xsl:if test="exists($new/uri)">
+			<ul style="display: none"> <!-- Default: collapsed tree -->
+				<xsl:for-each select="../rdf:Description[*/@rdf:resource=$uri]">
+					<xsl:variable name="about" select="@rdf:about"/>
+					<xsl:if test="not(exists($done[uri=$about]))">
+						<xsl:apply-templates select="." mode="makeTree">
+							<xsl:with-param name="done">
+								<xsl:copy-of select="$done"/>
+								<xsl:copy-of select="$new"/>
+							</xsl:with-param>
+						</xsl:apply-templates>
+					</xsl:if>
+				</xsl:for-each>
+			</ul>
+		</xsl:if>
+	</li>
+</xsl:template>
+
+<xsl:template match="rdf:RDF" mode="TreeAppearance">
+	<!--<div class="panel panel-primary">
+		<div class="panel-heading"/>
+		<div class="panel-body tree">--><div class="tree">
+			<ul>
+				<xsl:variable name="done">
+					<xsl:for-each select="rdf:Description[not(exists(*/@rdf:resource))]/@rdf:about">
+						<uri><xsl:value-of select="."/></uri>
+					</xsl:for-each>
+				</xsl:variable>
+				<xsl:apply-templates select="rdf:Description[not(exists(*/@rdf:resource))]" mode="makeTree"><xsl:with-param name="done" select="$done"/></xsl:apply-templates>
+			</ul></div><!--
+		</div>
+	</div>-->
+	<link rel="stylesheet" href="{$docroot}/css/treestyle.css"/>
+	<script src="{$docroot}/js/MultiNestedList.js"></script>
 </xsl:template>
 
 </xsl:stylesheet>

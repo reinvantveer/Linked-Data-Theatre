@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2rdfa.xsl
-    VERSION  1.5.0
-    DATE     2016-01-05
+    VERSION  1.6.0
+    DATE     2016-03-13
 
     Copyright 2012-2016
 
@@ -26,6 +26,8 @@
     DESCRIPTION
     Transformation of RDF document to a RDF document with mark-up annotations
 	
+	TODO: Transfer functionality to sparql2rdfa
+	
 -->
 <xsl:stylesheet version="2.0"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -35,49 +37,15 @@
 	xmlns:elmo="http://bp4mc2.org/elmo/def#"
 	xmlns:html="http://www.w3.org/1999/xhtml/vocab#"
 	xmlns:dcterms="http://purl.org/dc/terms/"
+	xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
 >
 
 <!-- bnodes and resources from all queries, this is not perfectly right, because it should be local to the specific query (more than one rdf:RDF is possible) -->
 <xsl:key name="resource" match="/root/results/rdf:RDF/rdf:Description" use="@rdf:about"/>
 <xsl:key name="bnodes" match="/root/results/rdf:RDF/rdf:Description" use="@rdf:nodeID"/>
 
-<xsl:template match="res:resultVariable" mode="variable">
-	<xsl:param name="fragments"/>
-	
-	<res:resultVariable>
-		<!-- variable name, no full uri -->
-		<xsl:variable name="varname" select="."/>
-		<xsl:variable name="fragment" select="$fragments[@applies-to=$varname]"/>
-		<!-- If the label of the property exists, include it (priority for a fragment, then the property-label in the query result -->
-		<xsl:variable name="plabels">
-			<xsl:copy-of select="$fragment/rdfs:label"/>
-		</xsl:variable>
-		<xsl:variable name="language" select="/root/context/language"/>
-		<xsl:variable name="plabel">
-			<xsl:choose>
-				<xsl:when test="$plabels/rdfs:label[@xml:lang=$language]!=''"><xsl:value-of select="$plabels/rdfs:label[@xml:lang=$language]"/></xsl:when> <!-- First choice: language of browser -->
-				<xsl:when test="$plabels/rdfs:label[not(exists(@xml:lang))]!=''"><xsl:value-of select="$plabels/rdfs:label[not(exists(@xml:lang))]"/></xsl:when> <!-- Second choice: no language -->
-				<xsl:when test="$plabels/rdfs:label[@xml:lang='nl']!=''"><xsl:value-of select="$plabels/rdfs:label[@xml:lang='nl']"/></xsl:when> <!-- Third choice: dutch -->
-				<xsl:when test="$plabels/rdfs:label[@xml:lang='en']!=''"><xsl:value-of select="$plabels/rdfs:label[@xml:lang='en']"/></xsl:when> <!-- Fourth choice: english -->
-				<xsl:otherwise><xsl:value-of select="$plabels/rdfs:label[1]"/></xsl:otherwise> <!-- If all fails, the first label -->
-			</xsl:choose>
-		</xsl:variable>
-		<xsl:if test="$plabel!=''"><xsl:attribute name="elmo:label"><xsl:value-of select="$plabel"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/elmo:appearance[1]/@rdf:resource!=''"><xsl:attribute name="elmo:appearance"><xsl:value-of select="$fragment/elmo:appearance[1]/@rdf:resource"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/html:link[1]!=''"><xsl:attribute name="elmo:link"><xsl:value-of select="$fragment/html:link[1]"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/elmo:name[1]!=''"><xsl:attribute name="elmo:name"><xsl:value-of select="$fragment/elmo:name[1]"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/elmo:index[1]!=''"><xsl:attribute name="elmo:index"><xsl:value-of select="$fragment/elmo:index[1]"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/html:glossary[1]/@rdf:resource!=''"><xsl:attribute name="html:glossary"><xsl:value-of select="$fragment/html:glossary[1]/@rdf:resource"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/html:stylesheet[1]!=''"><xsl:attribute name="html:stylesheet"><xsl:value-of select="$fragment/html:stylesheet[1]"/></xsl:attribute></xsl:if>
-		<xsl:if test="$fragment/elmo:template[1]!=''"><xsl:attribute name="elmo:template"><xsl:value-of select="normalize-space($fragment/elmo:template[1])"/></xsl:attribute></xsl:if>
-		<xsl:value-of select="$varname"/>
-	</res:resultVariable>
-</xsl:template>
-
 <xsl:template match="*" mode="property">
 	<xsl:param name="fragments"/>
-	
-	<!-- <xsl:copy-of select="$fragments"/> -->
 	
 	<xsl:element name="{name()}" namespace="{namespace-uri()}">
 		<!-- full uri of the property -->
@@ -165,34 +133,6 @@
 	</xsl:element>
 </xsl:template>
 
-<xsl:template match="res:solution">
-	<xsl:param name="fragments"/>
-
-	<res:solution rdf:nodeID="{@rdf:nodeID}">
-		<xsl:for-each select="res:binding">
-			<xsl:copy-of select="."/>
-			<xsl:variable name="varname" select="res:variable"/>
-			<xsl:variable name="fragment" select="$fragments[@applies-to=$varname]"/>
-			<xsl:if test="$fragment/rdf:value!=''">
-				<xsl:variable name="language" select="/root/context/language"/>
-				<xsl:variable name="rlabel">
-					<xsl:choose>
-						<xsl:when test="$fragment/rdf:value[@xml:lang=$language]!=''"><xsl:value-of select="$fragment/rdf:value[@xml:lang=$language]"/></xsl:when> <!-- First choice: language of browser -->
-						<xsl:when test="$fragment/rdf:value[not(exists(@xml:lang))]!=''"><xsl:value-of select="$fragment/rdf:value[not(exists(@xml:lang))]"/></xsl:when> <!-- Second choice: no language -->
-						<xsl:when test="$fragment/rdf:value[@xml:lang='nl']!=''"><xsl:value-of select="$fragment/rdf:value[@xml:lang='nl']"/></xsl:when> <!-- Third choice: dutch -->
-						<xsl:when test="$fragment/rdf:value[@xml:lang='en']!=''"><xsl:value-of select="$fragment/rdf:value[@xml:lang='en']"/></xsl:when> <!-- Fourth choice: english -->
-						<xsl:otherwise><xsl:value-of select="$fragment/rdf:value[1]"/></xsl:otherwise> <!-- If all fails, the first label -->
-					</xsl:choose>
-				</xsl:variable>
-				<res:binding rdf:nodeID="{@rdf:nodeID}l">
-					<res:variable><xsl:value-of select="$varname"/>_label</res:variable>
-					<res:value><xsl:value-of select="$rlabel"/></res:value>
-				</res:binding>
-			</xsl:if>
-		</xsl:for-each>
-	</res:solution>
-</xsl:template>
-
 <xsl:template match="representation" mode="results">
 	<xsl:param name="index"/>
 
@@ -203,6 +143,7 @@
 	</xsl:variable>
 	<xsl:variable name="appearance">
 		<xsl:choose>
+			<xsl:when test="queryForm/@satisfied!='' and queryForm/@geo='yes'">http://bp4mc2.org/elmo/def#GeoSelectAppearance</xsl:when>
 			<xsl:when test="queryForm/@satisfied!=''">http://bp4mc2.org/elmo/def#FormAppearance</xsl:when>
 			<xsl:when test="$appearance1='http://bp4mc2.org/elmo/def#ContentAppearance' and /root/results/rdf:RDF[position()=$index]/rdf:Description[@rdf:nodeID='rset']/rdf:type/@rdf:resource='http://www.w3.org/2005/sparql-results#ResultSet'">http://bp4mc2.org/elmo/def#TableAppearance</xsl:when>
 			<xsl:otherwise><xsl:value-of select="$appearance1"/></xsl:otherwise>
@@ -211,6 +152,13 @@
 	<rdf:RDF elmo:appearance="{$appearance}" elmo:query="{$representation-uri}">
 		<xsl:if test="exists(@container)"><xsl:attribute name="elmo:container"><xsl:value-of select="@container"/></xsl:attribute></xsl:if>
 		<xsl:choose>
+			<xsl:when test="queryForm/@satisfied!='' and queryForm/@geo='yes'">
+				<!-- If nothing is available, show center of the map (Netherlands, RD Amersfoort) -->
+				<rdf:Description rdf:about="locator">
+					<geo:long>5.387197444102625</geo:long>
+					<geo:lat>52.15516475286759</geo:lat>
+				</rdf:Description>
+			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#ContentAppearance' or $appearance='http://bp4mc2.org/elmo/def#CarouselAppearance'">
 				<xsl:variable name="fragments" select="fragment"/>
 				<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description" group-by="@rdf:about">
@@ -224,18 +172,7 @@
 				</xsl:for-each-group>
 			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#TableAppearance' or $appearance='http://bp4mc2.org/elmo/def#ShortTableAppearance' or $appearance='http://bp4mc2.org/elmo/def#TextSearchAppearance'">
-				<xsl:variable name="fragments" select="fragment"/>
-				<xsl:for-each select="/root/results/rdf:RDF[position()=$index]/rdf:Description">
-					<rdf:Description rdf:nodeID="rset">
-						<xsl:copy-of select="rdf:type"/>
-						<xsl:apply-templates select="res:resultVariable" mode="variable">
-							<xsl:with-param name="fragments" select="$fragments"/>
-						</xsl:apply-templates>
-						<xsl:apply-templates select="res:solution">
-							<xsl:with-param name="fragments" select="$fragments"/>
-						</xsl:apply-templates>
-					</rdf:Description>
-				</xsl:for-each>
+				<xsl:copy-of select="/root/results/rdf:RDF[position()=$index]/rdf:Description"/>
 			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#TextAppearance'">
 				<xsl:copy-of select="/root/docs/xmldocs[@uri=$representation-uri]"/>
@@ -261,7 +198,13 @@
 					</rdf:Description>
 				</xsl:for-each>
 			</xsl:when>
-			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#GeoAppearance' or $appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
+			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#GeoSelectAppearance' or $appearance='http://bp4mc2.org/elmo/def#GeoAppearance' or $appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
+				<xsl:if test="$appearance='http://bp4mc2.org/elmo/def#GeoSelectAppearance' and not(exists(/root/results/rdf:RDF[position()=$index]/*))">
+				<rdf:Description rdf:about="locator">
+					<geo:long><xsl:value-of select="/root/context/parameters/parameter[name='long']/value"/></geo:long>
+					<geo:lat><xsl:value-of select="/root/context/parameters/parameter[name='lat']/value"/></geo:lat>
+				</rdf:Description>
+				</xsl:if>
 				<xsl:copy-of select="/root/results/rdf:RDF[position()=$index]/*"/>
 				<xsl:for-each select="fragment">
 					<rdf:Description rdf:nodeID="f{position()}">
@@ -308,18 +251,7 @@
 				</xsl:for-each-group>
 			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#TableAppearance' or $appearance='http://bp4mc2.org/elmo/def#ShortTableAppearance' or $appearance='http://bp4mc2.org/elmo/def#TextSearchAppearance'">
-				<xsl:variable name="fragments" select="fragment"/>
-				<xsl:for-each select="/root/merge/rdf:RDF[position()=$index]/rdf:Description">
-					<rdf:Description rdf:nodeID="rset">
-						<xsl:copy-of select="rdf:type"/>
-						<xsl:apply-templates select="res:resultVariable" mode="variable">
-							<xsl:with-param name="fragments" select="$fragments"/>
-						</xsl:apply-templates>
-						<xsl:apply-templates select="res:solution">
-							<xsl:with-param name="fragments" select="$fragments"/>
-						</xsl:apply-templates>
-					</rdf:Description>
-				</xsl:for-each>
+				<xsl:copy-of select="/root/merge/rdf:RDF[position()=$index]/rdf:Description"/>
 			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#TextAppearance'">
 				<xsl:copy-of select="/root/docs/xmldocs[@uri=$representation-uri]"/>

@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2graphml.xsl
-    VERSION  1.5.0
-    DATE     2016-01-05
+    VERSION  1.6.0
+    DATE     2016-03-13
 
     Copyright 2012-2016
 

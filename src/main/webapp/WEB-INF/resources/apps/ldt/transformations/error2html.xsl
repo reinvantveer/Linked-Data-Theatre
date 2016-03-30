@@ -1,8 +1,8 @@
 <!--
 
     NAME     error2html.xsl
-    VERSION  1.5.1-SNAPSHOT
-    DATE     2016-01-29
+    VERSION  1.6.0
+    DATE     2016-03-13
 
     Copyright 2012-2016
 
@@ -39,7 +39,7 @@
 			<meta charset="utf-8"/>
 			<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>Error</title>
+			<title>Oeps - er ging iets mis</title>
 
 			<link rel="stylesheet" type="text/css" href="{$docroot}/css/bootstrap.min.css"/>
 			<link rel="stylesheet" type="text/css" href="{$docroot}/css/dataTables.bootstrap.min.css"/>
@@ -65,7 +65,7 @@
 						<div class="row">
 							<div class="panel panel-primary">
 								<div class="panel-heading">
-									<h3 class="panel-title">Error</h3>
+									<h3 class="panel-title">Oeps - er ging iets mis</h3>
 								</div>
 								<div class="panel-body">
 									<xsl:for-each select="results/parameters">
@@ -79,7 +79,7 @@
 						</div>
 						<xsl:variable name="divclass">
 							<xsl:choose>
-								<xsl:when test="results/submission/@env='dev'">row</xsl:when>
+								<xsl:when test="results/theatre/@env='dev'">row</xsl:when>
 								<xsl:otherwise>row hidden</xsl:otherwise>
 							</xsl:choose>
 						</xsl:variable>

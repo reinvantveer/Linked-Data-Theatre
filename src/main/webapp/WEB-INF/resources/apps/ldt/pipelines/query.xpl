@@ -1,8 +1,8 @@
 <!--
 
     NAME     query.xpl
-    VERSION  1.5.1-SNAPSHOT
-    DATE     2016-01-27
+    VERSION  1.6.3
+    DATE     2016-03-29
 
     Copyright 2012-2016
 
@@ -29,15 +29,18 @@
 -->
 <p:config xmlns:p="http://www.orbeon.com/oxf/pipeline"
 		  xmlns:xforms="http://www.w3.org/2002/xforms"
+		  xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
           xmlns:oxf="http://www.orbeon.com/oxf/processors"
 		  xmlns:ev="http://www.w3.org/2001/xml-events"
 		  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 		  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 		  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 		  xmlns:html="http://www.w3.org/1999/xhtml/vocab#"
-        xmlns:sql="http://orbeon.org/oxf/xml/sql"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-		  xmlns:elmo="http://bp4mc2.org/elmo/def#">
+		  xmlns:res="http://www.w3.org/2005/sparql-results#"
+          xmlns:sql="http://orbeon.org/oxf/xml/sql"
+          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		  xmlns:elmo="http://bp4mc2.org/elmo/def#"
+>
 
 	<!-- Configuration> -->
 	<p:param type="input" name="instance"/>
@@ -97,7 +100,7 @@
 				</p:input>
 				<p:input name="request" transform="oxf:xslt" href="#context">
 					<parameters xsl:version="2.0">
-						<query> <!-- Query is nog niet helemaal goed: er zit nog geen graph om de union heen. Hierdoor KAN de definitie uit te veel graphs komen! -->
+						<query>
 						<![CDATA[
 							PREFIX elmo: <http://bp4mc2.org/elmo/def#>
 							CONSTRUCT {
@@ -111,22 +114,35 @@
 								}
 								{
 									{
-										?rep elmo:url-pattern ?pattern.
-										FILTER regex("]]><xsl:value-of select="context/url"/><![CDATA[",?pattern)
+										GRAPH <]]><xsl:value-of select="context/representation-graph/@uri"/><![CDATA[> {
+											?rep elmo:url-pattern ?pattern.
+											FILTER regex("]]><xsl:value-of select="context/url"/><![CDATA[",?pattern)
+										}
 									}
 									UNION
 									{
-										?rep elmo:uri-pattern ?pattern.
-										FILTER regex("]]><xsl:value-of select="context/subject"/><![CDATA[",?pattern)
+										GRAPH <]]><xsl:value-of select="context/representation-graph/@uri"/><![CDATA[> {
+											?rep elmo:uri-pattern ?pattern.
+											FILTER regex("]]><xsl:value-of select="context/subject"/><![CDATA[",?pattern)
+										}
 									}]]><xsl:if test="not(contains(context/subject,' '))"><![CDATA[
 									UNION
-									{?rep elmo:applies-to <]]><xsl:value-of select="context/subject"/><![CDATA[>}
+									{
+										GRAPH <]]><xsl:value-of select="context/representation-graph/@uri"/><![CDATA[> {
+											?rep elmo:applies-to <]]><xsl:value-of select="context/subject"/><![CDATA[>
+										}
+									}
 									UNION
 									{
-										?rep elmo:applies-to ?profile.
-										?profile ?predicate ?object.
-										<]]><xsl:value-of select="context/subject"/><![CDATA[> ?predicate ?object
-										FILTER isBlank(?profile)
+										GRAPH <]]><xsl:value-of select="context/representation-graph/@uri"/><![CDATA[> {
+											?rep elmo:applies-to ?profile.
+											?profile ?predicate ?object.
+											FILTER isBlank(?profile)
+										}
+										{
+											<]]><xsl:value-of select="context/subject"/><![CDATA[> ?predicate ?bobject
+										}
+										FILTER (str(?object)=str(?bobject))
 									}]]></xsl:if><![CDATA[
 								}
 							}
@@ -141,118 +157,134 @@
 		</p:otherwise>
 	</p:choose>
 	
-	<!-- Create query -->
-	<p:processor name="oxf:xslt">
-		<p:input name="config">
-			<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:func="func" exclude-result-prefixes="func">
-				<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="no"/>
-				<xsl:function name="func:order">
-					<xsl:param name="layer"/>
-					<xsl:choose>
-						<xsl:when test="$layer='http://bp4mc2.org/elmo/def#TopLayer'">1</xsl:when>
-						<xsl:when test="$layer='http://bp4mc2.org/elmo/def#DefaultLayer'">2</xsl:when>
-						<xsl:when test="$layer='http://bp4mc2.org/elmo/def#BottomLayer'">3</xsl:when>
-						<xsl:otherwise>9</xsl:otherwise>
-					</xsl:choose>
-				</xsl:function>
-				<xsl:template match="/">
-					<!-- First, find the right layer -->
-					<xsl:variable name="layer1">
-						<xsl:for-each select="/root/rdf:RDF/rdf:Description/elmo:layer"><xsl:sort select="func:order(@rdf:resource)"/>
-							<xsl:if test="position()=1"><xsl:value-of select="@rdf:resource"/></xsl:if>
-						</xsl:for-each>
-					</xsl:variable>
-					<xsl:variable name="layer">
-						<xsl:choose>
-							<xsl:when test="exists(/root/rdf:RDF/rdf:Description[not(exists(elmo:layer))])">
-								<xsl:choose>
-									<xsl:when test="$layer1='http://bp4mc2.org/elmo/def#TopLayer'"><xsl:value-of select="$layer1"/></xsl:when>
-									<xsl:otherwise>http://bp4mc2.org/elmo/def#DefaultLayer</xsl:otherwise> <!-- No explicit layer means: defaultlayer (2) -->
-								</xsl:choose>
-							</xsl:when>
-							<xsl:when test="$layer1=''">http://bp4mc2.org/elmo/def#DefaultLayer</xsl:when> <!-- No layer whatsoever means: defaultlayer (2) -->
-							<xsl:otherwise><xsl:value-of select="$layer1"/></xsl:otherwise>
-						</xsl:choose>
-					</xsl:variable>
-					<xsl:variable name="representations">
-						<xsl:choose>
-							<!-- Show default representation if non exists -->
-							<xsl:when test="root/context/query='' and not(exists(root/rdf:RDF/rdf:Description[elmo:layer/@rdf:resource=$layer or (not(exists(elmo:layer)) and $layer='http://bp4mc2.org/elmo/def#DefaultLayer')]))">
-								<rep>&lt;rep://elmo.localhost/resource&gt;</rep>
-							</xsl:when>
-							<!-- Representations on the right layer -->
-							<xsl:otherwise>
-								<xsl:for-each select="root/rdf:RDF/rdf:Description[elmo:layer/@rdf:resource=$layer or (not(exists(elmo:layer)) and $layer='http://bp4mc2.org/elmo/def#DefaultLayer')]">
-									<rep>&lt;<xsl:value-of select="@rdf:about"/>&gt;</rep>
+	<p:choose href="#context">
+		<!-- Use predefined representation from LDT for elmo-representations -->
+		<p:when test="substring-after(context/representation,'http://bp4mc2.org/elmo/def#')!=''">
+			<p:processor name="oxf:url-generator">
+				<p:input name="config" transform="oxf:xslt" href="#context">
+					<config xsl:version="2.0">
+						<url>../representations/<xsl:value-of select="substring-after(context/representation,'http://bp4mc2.org/elmo/def#')"/>.xml</url>
+						<content-type>application/xml</content-type>
+					</config>
+				</p:input>
+				<p:output name="data" id="defquery"/>
+			</p:processor>
+		</p:when>
+		<p:otherwise>
+			<!-- Create query -->
+			<p:processor name="oxf:xslt">
+				<p:input name="config">
+					<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:func="func" exclude-result-prefixes="func">
+						<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="no"/>
+						<xsl:function name="func:order">
+							<xsl:param name="layer"/>
+							<xsl:choose>
+								<xsl:when test="$layer='http://bp4mc2.org/elmo/def#TopLayer'">1</xsl:when>
+								<xsl:when test="$layer='http://bp4mc2.org/elmo/def#DefaultLayer'">2</xsl:when>
+								<xsl:when test="$layer='http://bp4mc2.org/elmo/def#BottomLayer'">3</xsl:when>
+								<xsl:otherwise>9</xsl:otherwise>
+							</xsl:choose>
+						</xsl:function>
+						<xsl:template match="/">
+							<!-- First, find the right layer -->
+							<xsl:variable name="layer1">
+								<xsl:for-each select="/root/rdf:RDF/rdf:Description/elmo:layer"><xsl:sort select="func:order(@rdf:resource)"/>
+									<xsl:if test="position()=1"><xsl:value-of select="@rdf:resource"/></xsl:if>
 								</xsl:for-each>
-							</xsl:otherwise>
-						</xsl:choose>
-						<!-- Include explicitly included representations -->
-						<xsl:for-each select="root/context/query[.!='']">
-							<rep>&lt;<xsl:value-of select="."/>&gt;</rep>
-						</xsl:for-each>
-					</xsl:variable>
-					<parameters layer="{$layer}">
-						<query>
-							<![CDATA[
-							PREFIX elmo: <http://bp4mc2.org/elmo/def#>
-							CONSTRUCT {
-								?rep ?repp ?repo.
-								?fragment ?fragmentp ?fragmento.
-								?repchild ?repchildp ?repchildo.
-								?fragmentchild ?fragmentchildp ?fragmentchildo.
-								?form ?formp ?formo.
-								?ff ?ffp ?ffo.
-							}
-							WHERE {
-								GRAPH <]]><xsl:value-of select="root/context/representation-graph/@uri"/><![CDATA[>{
-								]]><xsl:for-each select="$representations/rep">
-									<xsl:if test="position()!=1">UNION</xsl:if>
-									<![CDATA[{
+							</xsl:variable>
+							<xsl:variable name="layer">
+								<xsl:choose>
+									<xsl:when test="exists(/root/rdf:RDF/rdf:Description[not(exists(elmo:layer))])">
+										<xsl:choose>
+											<xsl:when test="$layer1='http://bp4mc2.org/elmo/def#TopLayer'"><xsl:value-of select="$layer1"/></xsl:when>
+											<xsl:otherwise>http://bp4mc2.org/elmo/def#DefaultLayer</xsl:otherwise> <!-- No explicit layer means: defaultlayer (2) -->
+										</xsl:choose>
+									</xsl:when>
+									<xsl:when test="$layer1=''">http://bp4mc2.org/elmo/def#DefaultLayer</xsl:when> <!-- No layer whatsoever means: defaultlayer (2) -->
+									<xsl:otherwise><xsl:value-of select="$layer1"/></xsl:otherwise>
+								</xsl:choose>
+							</xsl:variable>
+							<xsl:variable name="representations">
+								<xsl:choose>
+									<!-- Show default representation if non exists -->
+									<xsl:when test="root/context/query='' and not(exists(root/rdf:RDF/rdf:Description[elmo:layer/@rdf:resource=$layer or (not(exists(elmo:layer)) and $layer='http://bp4mc2.org/elmo/def#DefaultLayer')]))">
+										<rep>&lt;rep://elmo.localhost/resource&gt;</rep>
+									</xsl:when>
+									<!-- Representations on the right layer -->
+									<xsl:otherwise>
+										<xsl:for-each select="root/rdf:RDF/rdf:Description[elmo:layer/@rdf:resource=$layer or (not(exists(elmo:layer)) and $layer='http://bp4mc2.org/elmo/def#DefaultLayer')]">
+											<rep>&lt;<xsl:value-of select="@rdf:about"/>&gt;</rep>
+										</xsl:for-each>
+									</xsl:otherwise>
+								</xsl:choose>
+								<!-- Include explicitly included representations -->
+								<xsl:for-each select="root/context/query[.!='']">
+									<rep>&lt;<xsl:value-of select="."/>&gt;</rep>
+								</xsl:for-each>
+							</xsl:variable>
+							<parameters layer="{$layer}">
+								<query>
+									<![CDATA[
+									PREFIX elmo: <http://bp4mc2.org/elmo/def#>
+									CONSTRUCT {
 										?rep ?repp ?repo.
-										FILTER (?rep=]]><xsl:value-of select="."/><![CDATA[)
-										OPTIONAL { ?rep elmo:fragment ?fragment. ?fragment ?fragmentp ?fragmento }
-										OPTIONAL {
-											?rep elmo:contains ?repchild.
-											?repchild ?repchildp ?repchildo.
-											OPTIONAL { ?repchild elmo:fragment ?fragmentchild. ?fragmentchild ?fragmentchildp ?fragmentchildo } 
+										?fragment ?fragmentp ?fragmento.
+										?repchild ?repchildp ?repchildo.
+										?fragmentchild ?fragmentchildp ?fragmentchildo.
+										?form ?formp ?formo.
+										?ff ?ffp ?ffo.
+									}
+									WHERE {
+										GRAPH <]]><xsl:value-of select="root/context/representation-graph/@uri"/><![CDATA[>{
+										]]><xsl:for-each select="$representations/rep">
+											<xsl:if test="position()!=1">UNION</xsl:if>
+											<![CDATA[{
+												?rep ?repp ?repo.
+												FILTER (?rep=]]><xsl:value-of select="."/><![CDATA[)
+												OPTIONAL { ?rep elmo:fragment ?fragment. ?fragment ?fragmentp ?fragmento }
+												OPTIONAL {
+													?rep elmo:contains ?repchild.
+													?repchild ?repchildp ?repchildo.
+													OPTIONAL { ?repchild elmo:fragment ?fragmentchild. ?fragmentchild ?fragmentchildp ?fragmentchildo } 
+												}
+												OPTIONAL {
+													?rep elmo:queryForm ?form.
+													?form ?formp ?formo.
+													?form elmo:fragment ?ff.
+													?ff ?ffp ?ffo.
+												}
+											}]]></xsl:for-each><![CDATA[
 										}
-										OPTIONAL {
-											?rep elmo:queryForm ?form.
-											?form ?formp ?formo.
-											?form elmo:fragment ?ff.
-											?ff ?ffp ?ffo.
-										}
-									}]]></xsl:for-each><![CDATA[
-								}
-							}
-							]]>
-						</query>
-						<default-graph-uri/>
-						<error type=""/>
-					</parameters>
-				</xsl:template>
-			</xsl:stylesheet>
-		</p:input>
-		<p:input name="data" href="aggregate('root',#context,#representations)"/>
-		<p:output name="data" id="defquerytext"/>
-	</p:processor>
-	
-	<!-- Fetch query definition(s) -->
-	<p:processor name="oxf:xforms-submission">
-		<p:input name="submission" transform="oxf:xslt" href="#context">
-			<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
-				<xforms:header>
-					<xforms:name>Accept</xforms:name>
-					<xforms:value>application/rdf+xml</xforms:value>
-				</xforms:header>
-				<xforms:setvalue ev:event="xforms-submit-error" ref="error" value="event('response-body')"/>
-				<xforms:setvalue ev:event="xforms-submit-error" ref="error/@type" value="event('error-type')"/>
-			</xforms:submission>
-		</p:input>
-		<p:input name="request" href="#defquerytext"/>
-		<p:output name="response" id="defquery"/>
-	</p:processor>
+									}
+									]]>
+								</query>
+								<default-graph-uri/>
+								<error type=""/>
+							</parameters>
+						</xsl:template>
+					</xsl:stylesheet>
+				</p:input>
+				<p:input name="data" href="aggregate('root',#context,#representations)"/>
+				<p:output name="data" id="defquerytext"/>
+			</p:processor>
+			
+			<!-- Fetch query definition(s) -->
+			<p:processor name="oxf:xforms-submission">
+				<p:input name="submission" transform="oxf:xslt" href="#context">
+					<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
+						<xforms:header>
+							<xforms:name>Accept</xforms:name>
+							<xforms:value>application/rdf+xml</xforms:value>
+						</xforms:header>
+						<xforms:setvalue ev:event="xforms-submit-error" ref="error" value="event('response-body')"/>
+						<xforms:setvalue ev:event="xforms-submit-error" ref="error/@type" value="event('error-type')"/>
+					</xforms:submission>
+				</p:input>
+				<p:input name="request" href="#defquerytext"/>
+				<p:output name="response" id="defquery"/>
+			</p:processor>
+		</p:otherwise>
+	</p:choose>
 							
 	<!-- Query from graph representation -->
 	<p:processor name="oxf:xslt">
@@ -275,6 +307,27 @@
 							<xsl:copy-of select="key('resources',@rdf:resource)/(* except elmo:applies-to)"/>
 						</fragment>
 					</xsl:if>
+				</xsl:template>
+				<xsl:template match="elmo:queryForm[@rdf:resource='http://bp4mc2.org/elmo/def#GeoForm']">
+					<xsl:variable name="satisfied">
+						<xsl:if test="not(key('parameters','long')/value!='')">N</xsl:if>
+						<xsl:if test="not(key('parameters','lat')/value!='')">N</xsl:if>
+					</xsl:variable>
+					<queryForm satisfied="{$satisfied}" geo="yes">
+						<rdfs:label>TEST</rdfs:label>
+						<elmo:fragment>
+							<rdf:Description>
+								<elmo:applies-to>long</elmo:applies-to>
+								<elmo:constraint rdf:resource="http://bp4mc2.org/elmo/def#MandatoryConstraint"/>
+							</rdf:Description>
+						</elmo:fragment>
+						<elmo:fragment>
+							<rdf:Description>
+								<elmo:applies-to>lat</elmo:applies-to>
+								<elmo:constraint rdf:resource="http://bp4mc2.org/elmo/def#MandatoryConstraint"/>
+							</rdf:Description>
+						</elmo:fragment>
+					</queryForm>
 				</xsl:template>
 				<xsl:template match="elmo:queryForm">
 					<xsl:for-each select="key('resources',@rdf:resource)">
@@ -335,7 +388,7 @@
 								</xsl:when>
 								<xsl:when test="exists(elmo:data[1])">
 									<!-- Als er letterlijke data wordt opgevraagd, dan deze straks ophalen via de query -->
-									<representation uri="{@rdf:about}" index="{position()}">
+									<representation uri="{@rdf:about}" index="{position()}" endpoint="{/root/context/configuration-endpoint}">
 										<xsl:if test="exists(elmo:appearance[1])"><xsl:attribute name="appearance"><xsl:value-of select="elmo:appearance[1]/@rdf:resource"/></xsl:attribute></xsl:if>
 										<xsl:if test="exists(elmo:operation[1])"><xsl:attribute name="operation"><xsl:value-of select="elmo:operation[1]/@rdf:resource"/></xsl:attribute></xsl:if>
 										<xsl:apply-templates select="elmo:queryForm"/>
@@ -387,7 +440,14 @@
 		<p:input name="data" href="aggregate('root',#defquery,#context)"/>
 		<p:output name="data" id="querytext"/>
 	</p:processor>
-
+<!--
+<p:processor name="oxf:xml-serializer">
+	<p:input name="config">
+		<config/>
+	</p:input>
+	<p:input name="data" href="#querytext"/>
+</p:processor>
+-->
 	<!-- More than one query is possible -->
 	<p:for-each href="#querytext" select="/view/representation[not(exists(service))]" root="results" id="sparql">
 	
@@ -544,7 +604,8 @@
 									<xsl:variable name="query2" select="replace($query1,'@LANGUAGE@',/root/context/language)"/>
 									<xsl:variable name="query3" select="replace($query2,'@USER@',/root/context/user)"/>
 									<xsl:variable name="query4" select="replace($query3,'@CURRENTMOMENT@',format-dateTime($currentmoment,'[Y0001]/[M01]/[D01]/[H01]/[m01]/[s01]'))"/>
-									<query><xsl:value-of select="replace($query4,'@SUBJECT@',/root/context/subject)"/></query>
+									<xsl:variable name="query5" select="replace($query4,'@STAGE@',/root/context/back-of-stage)"/>
+									<query><xsl:value-of select="replace($query5,'@SUBJECT@',/root/context/subject)"/></query>
 									<default-graph-uri />
 									<error type=""/>
 								</parameters>
@@ -560,15 +621,21 @@
 					<p:input name="config">
 						<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 							<xsl:template match="/root">
-								<xsl:variable name="endpoint"><xsl:value-of select="representation/@endpoint"/></xsl:variable>
+								<xsl:variable name="endpoint">
+									<xsl:value-of select="representation/@endpoint"/>
+									<xsl:if test="not(representation/@endpoint!='')"><xsl:value-of select="context/local-endpoint"/></xsl:if>
+								</xsl:variable>
 								<endpoint>
-									<xsl:value-of select="$endpoint"/>
-									<xsl:if test="$endpoint=''"><xsl:value-of select="context/local-endpoint"/></xsl:if>
+									<url><xsl:value-of select="$endpoint"/></url>
+									<xsl:for-each select="theatre/endpoint[@url=$endpoint]">
+										<xsl:if test="exists(username)"><username><xsl:value-of select="username"/></username></xsl:if>
+										<xsl:if test="exists(password)"><password><xsl:value-of select="password"/></password></xsl:if>
+									</xsl:for-each>
 								</endpoint>
 							</xsl:template>
 						</xsl:stylesheet>
 					</p:input>
-					<p:input name="data" href="aggregate('root',current(),#context)"/>
+					<p:input name="data" href="aggregate('root',current(),#context,#instance)"/>
 					<p:output name="data" id="endpoint"/>
 				</p:processor>
 
@@ -577,7 +644,13 @@
 				<!-- No simple solution available :-( :-( :-( -->
 				<p:processor name="oxf:xforms-submission">
 					<p:input name="submission" transform="oxf:xslt" href="#endpoint">
-						<xforms:submission method="post" xsl:version="2.0" action="{endpoint}" serialization="application/x-www-form-urlencoded">
+						<xforms:submission method="post" xsl:version="2.0" action="{endpoint/url}" serialization="application/x-www-form-urlencoded">
+							<xsl:if test="endpoint/username!=''"><xsl:attribute name="xxforms:username"><xsl:value-of select="endpoint/username"/></xsl:attribute></xsl:if>
+							<xsl:if test="endpoint/password!=''"><xsl:attribute name="xxforms:password"><xsl:value-of select="endpoint/password"/></xsl:attribute></xsl:if>
+							<xforms:header>
+								<xforms:name>Accept</xforms:name>
+								<xforms:value>application/sparql-results+xml</xforms:value>
+							</xforms:header>
 							<xforms:header>
 								<xforms:name>Accept</xforms:name>
 								<xforms:value>application/rdf+xml</xforms:value>
@@ -587,7 +660,13 @@
 						</xforms:submission>
 					</p:input>
 					<p:input name="request" href="#query"/>
-					<p:output name="response" ref="sparql"/>
+					<p:output name="response" id="sparqlres"/>
+				</p:processor>
+				<!-- Transform SPARQL to RDF -->
+				<p:processor name="oxf:xslt">
+					<p:input name="data" href="aggregate('root',#context,current(),#sparqlres)"/>
+					<p:input name="config" href="../transformations/sparql2rdfa.xsl"/>
+					<p:output name="data" ref="sparql"/>
 				</p:processor>
 			</p:otherwise>
 		</p:choose>
@@ -709,7 +788,7 @@
 						<p:input name="config">
 							<config/>
 						</p:input>
-						<p:input name="data" href="#sparql#xpointer(/results/rdf:RDF[1])"/>
+						<p:input name="data" href="#sparql#xpointer((/results/res:sparql|/results/rdf:RDF)[1])"/>
 					</p:processor>
 				</p:when>
 				<!-- Show query instead of the result -->

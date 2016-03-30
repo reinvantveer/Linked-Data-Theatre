@@ -1,7 +1,7 @@
 /*
  * NAME     linkeddatamap.js
- * VERSION  1.5.1-SNAPSHOT
- * DATE     2016-01-27
+ * VERSION  1.6.2
+ * DATE     2016-03-16
  *
  * Copyright 2012-2016
  *
@@ -37,6 +37,9 @@ var movedItem;
 
 // Resolutions (pixels per meter) of the zoom levels:
 var res = [3440.640, 1720.320, 860.160, 430.080, 215.040, 107.520, 53.760, 26.880, 13.440, 6.720, 3.360, 1.680, 0.840, 0.420];
+
+// Relative sizing of circles
+var circleQuotient = 0.7;
 
 var numberRegexp = /^[-+]?([0-9]*\.[0-9]+|[0-9]+)([eE][-+]?[0-9]+)?/;
 
@@ -157,7 +160,7 @@ function parse(_) {
         if (!$(/^(\))/)) return null;
         return {
             type: 'Point',
-			radius: parseFloat(c[1]),
+			radius: circleQuotient*parseFloat(c[1]),
             coordinates: c[0]
         };
 	}
@@ -290,7 +293,6 @@ function resetHighlight(e) {
 
 function circleMoveStart(e) {
 	movedItem = e.target;
-	//map.removeEventListener('mousemove');
 	map.on('mousemove',circleMove);
 	map.on('mouseup',circleMoveEnd);
 }
@@ -318,6 +320,9 @@ function setChangeColors() {
 
 function circleMove(e) {
 	movedItem.setLatLng(e.latlng);
+	if (movedItem.label) {	
+		movedItem.label.setLatLng(movedItem._latlng);
+	}
 	setChangeColors();
 	//Onderstaande is nog niet echt heel netjes, nog verbeteren
 	if (movedItem.edge!=undefined) {
@@ -369,17 +374,30 @@ function addWKT(uri, wkt, text, url, styleclass)
 	}
 	lastPolygon = L.geoJson(wktObject,{style: style,onEachFeature: onEachFeature,pointToLayer: pointToLayer}).addTo(map)
 						.bindPopup(html);
-	//Only if bindLabel is available
 	//TESTTESTTEST
 	lastPolygon.uri = uri;
 	//TESTTESTTEST
+	//Only if bindLabel is available
+
+	//Stukje hieronder plaatst een text svg in de tekst!
+	if (lastPolygon.bindLabel2!=undefined) {
+		var layer = lastPolygon.getLayers()[0];
+		var pos = map.latLngToLayerPoint(layer._latlng);
+		var labelPoint = map.layerPointToContainerPoint(pos);
+		
+		var tsvg = document.createElementNS("http://www.w3.org/2000/svg","text");
+		tsvg.setAttribute("x",labelPoint.x);
+		tsvg.setAttribute("y",labelPoint.y);
+		var thtm = document.createTextNode("test");
+		tsvg.appendChild(thtm);
+		layer._path.parentNode.appendChild(tsvg);
+	}
+	
 	if (lastPolygon.bindLabel!=undefined) {
 		lastPolygon.bindLabel(text,{noHide:true, offset: [0,0]});
 		lastPolygon.showLabel();
 	}
 
-	//lastPolygon.setStyle('');
-	
 	//Add to list
 	listOfGeoObjects.push(lastPolygon);
 }
@@ -394,7 +412,10 @@ function addEdge(subject,predicate,object) {
 		latlngs.push(sSub.getLayers()[0].getLatLng());
 		latlngs.push(sObj.getLayers()[0].getLatLng());
 		var polyline = L.polyline(latlngs, {className: 'edgestyle'}).addTo(map);
-		d3.select(polyline._path).attr("marker-end","url(#ArrowHead)");
+		d3.select(polyline._path)
+			.attr("marker-end","url(#ArrowHead)")
+			.attr("stroke","#606060")
+		;
 		sSub.getLayers()[0].edge = polyline;
 	}
 
@@ -406,21 +427,12 @@ function updateMap() {
 		updateTTL += "<" + listOfMarkers[i].feature.geometry.url + '> geo:geometry "CIRCLE(' + listOfMarkers[i].getLatLng().lng + ' ' + listOfMarkers[i].getLatLng().lat + ',2)". ';
 	}
 	for(i = 0; i < listOfGeoObjects.length; ++i) {
-		//listOfGeoObjects[i].setStyle({fillColor: '#0000FF', color: '#0000FF'});
 		layer = listOfGeoObjects[i].getLayers()[0];
 		if (layer.feature.geometry.styleclass!="shidden-object") {
 			layer._path.setAttribute("class","leaflet-interactive "+layer.feature.geometry.styleclass);
 		}
 	}
 	if (listOfMarkers.length>0) {
-		//alert(updateTTL);
-		//updateTTL = "blub";
-		
-		//Perform the update via an ajax call
-		//$.ajax({method: "POST", url: "/header.json", data: {para1: "Blub"}})
-		//	.done(function(msg) {alert(msg.hoi)});
-		
-		//$.post("/header.json", {para1: updateTTL}, function(data) {alert(JSON.stringify(data.request.parameters))},'json');
 		$.post(containerURL, {container: containerURL,content: updateTTL}, function(data) {alert(data.response)},'json');
 		
 		listOfMarkers = [];
@@ -450,7 +462,8 @@ function addPoint(latCor, longCor, text, url)
 
 function printMap() {
 
-	map.setZoom(3);
+	//Set zoom to level 1: everything should be visible
+	map.setZoom(1,{animate:false});
 	var img = document.getElementsByClassName("leaflet-image-layer")[0]; //Dit mag beter: er zijn mogelijk meerdere img met deze classname
 
 	//Size of the container should be the size of the image (don't know how to do this :-(
@@ -458,7 +471,6 @@ function printMap() {
 	//Zoom should be 1:1
 	//Styleclass declarations can not be exported: copy styleclass values to style attributes
 	for(i = 0; i < listOfGeoObjects.length; ++i) {
-		//var pathStyle = getComputedStyle(svg.childNodes[0].childNodes[0]);
 		var pathStyle = getComputedStyle(listOfGeoObjects[i].getLayers()[0]._path);
 		listOfGeoObjects[i].setStyle({color: pathStyle.getPropertyValue("stroke"), fillColor: pathStyle.getPropertyValue("fill"), fillOpacity: pathStyle.getPropertyValue("fill-opacity")});
 	}
@@ -470,9 +482,15 @@ function printMap() {
 	var form = document.getElementById("svgform");
 	form['data'].value = svg_xml;
 	form['type'].value = 'pdf'; //pdf and png are allowed values
-	form['imgwidth'].value = img.width;
-	form['imgheight'].value = img.height;
-	form['imgsrc'].value = img.src
+	form['dimensions'].value = img._leaflet_pos.x+"|"+img._leaflet_pos.y+"|"+svg._leaflet_pos.x+"|"+svg._leaflet_pos.y+"|"+img.width+"|"+img.height+"|"+svg.width.baseVal.value+"|"+svg.height.baseVal.value;
+	form['imgsrc'].value = img.src;
+	form.submit();
+}
+
+function mapClicked(e) {
+	var form = document.getElementById("clickform");
+	form['lat'].value = e.latlng.lat;
+	form['long'].value = e.latlng.lng;
 	form.submit();
 }
 
@@ -539,11 +557,10 @@ function initMap(docroot, latCor, longCor, backMap, imageMapURL, contURL, left, 
 
 	//Zoom option for circlemarkers
 	map.on('zoomend',resizeCircle);
-	
 	map.invalidateSize();
 }
 
-function showLocations(doZoom)
+function showLocations(doZoom, appearance)
 {
 	d3.select(map.getPanes().overlayPane).selectAll("g").append('marker')
 	.attr('id'          , 'ArrowHead')
@@ -553,6 +570,9 @@ function showLocations(doZoom)
 	.attr('markerWidth' , 6)
 	.attr('markerHeight', 6)
 	.attr('orient'      , 'auto')
+	.attr('stroke'		, '#909090')
+	.attr('fill'		, 'none')
+	.attr('stroke-width', '2px')
   .append('path')
 	.attr('d', 'M0,-5L10,0L0,5');
 	
@@ -560,8 +580,17 @@ function showLocations(doZoom)
 	for(i = 0; i < listOfLocations.length; ++i)
 		listOfLocations[i].addTo(map);
 
-	if (doZoom==1 && !(lastPolygon.getLayers()[0] instanceof L.CircleMarker)) {
-		map.fitBounds(lastPolygon.getBounds());
+	if (listOfGeoObjects.length!=0) {
+		var firstPolygon = listOfGeoObjects[0];
+		if (doZoom==1 && (firstPolygon) && !(firstPolygon.getLayers()[0] instanceof L.CircleMarker)) {
+			map.fitBounds(firstPolygon.getBounds());
+		}
 	}
 
+	//No locations, show crosshair and register event
+	if (!(lastPolygon) || appearance=='GeoSelectAppearance') {
+		map.on('click',mapClicked);
+		document.getElementById('map').style.cursor = 'crosshair';
+	}
+	
 }
