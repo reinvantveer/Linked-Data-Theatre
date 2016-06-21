@@ -1,8 +1,8 @@
 <!--
 
     NAME     ttl2rdfaform.xsl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -37,11 +37,24 @@
 	xmlns:dcterms="http://purl.org/dc/terms/"
 >
 
+<xsl:key name="bnode" match="/root/rdf:RDF/rdf:Description" use="@rdf:nodeID"/>
+
+<xsl:template match="rdf:Description" mode="data">
+	<xsl:copy-of select="."/>
+	<xsl:apply-templates select="key('bnode',elmo:data/@rdf:nodeID)" mode="data"/>
+</xsl:template>
+
 <xsl:template match="/">
 	<results>
 		<context>
 			<language>nl</language>
+			<xsl:copy-of select="root/context/stylesheet"/>
 		</context>
+		<xsl:for-each select="root/rdf:RDF/rdf:Description[exists(elmo:appearance)]">
+			<rdf:RDF elmo:appearance="{elmo:appearance/@rdf:resource}">
+				<xsl:apply-templates select="key('bnode',elmo:data/@rdf:nodeID)" mode="data"/>
+			</rdf:RDF>
+		</xsl:for-each>
 		<rdf:RDF elmo:appearance="http://bp4mc2.org/elmo/def#FormAppearance">
 			<rdf:Description rdf:nodeID="form">
 				<rdfs:label>
@@ -94,7 +107,7 @@
 				<rdf:Description rdf:nodeID="rset">
 					<rdf:type rdf:resource="http://www.w3.org/2005/sparql-results#ResultSet"/>
 					<res:resultVariable elmo:label="Versie">v</res:resultVariable>
-					<xsl:for-each select="root/rdf:RDF/rdf:Description/dcterms:hasVersion"><xsl:sort select="@rdf:resource"/>
+					<xsl:for-each select="root/sparql/rdf:RDF/rdf:Description/dcterms:hasVersion"><xsl:sort select="@rdf:resource"/>
 						<res:solution rdf:nodeID="r{position()}">
 							<res:binding rdf:nodeID="r{position()}c0">
 								<res:variable>v</res:variable>

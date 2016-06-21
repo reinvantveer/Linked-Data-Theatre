@@ -1,8 +1,8 @@
 <!--
 
     NAME     sparql2rdfaform.xsl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.1-SNAPSHOT
+    DATE     2016-06-21
 
     Copyright 2012-2016
 
@@ -72,6 +72,7 @@
 <xsl:template match="/">
 	<results>
 		<xsl:copy-of select="root/context"/>
+		<xsl:copy-of select="root/representation/rdf:RDF"/>
 		<rdf:RDF elmo:appearance="http://bp4mc2.org/elmo/def#FormAppearance">
 			<rdf:Description rdf:nodeID="form">
 				<rdfs:label>Query</rdfs:label>
@@ -85,6 +86,14 @@
 					<html:stylesheet>height:40px; background:red; color:white;</html:stylesheet>
 				</rdf:Description>
 			</xsl:if>
+			<xsl:if test="exists(root/queries/rdf:RDF/rdf:Description)">
+				<rdf:Description rdf:nodeID="f2a">
+					<rdfs:label>Select</rdfs:label>
+					<elmo:applies-to>select</elmo:applies-to>
+					<elmo:valuesFrom rdf:resource="http://bp4mc2.org/elmo/def#Queries"/>
+					<elmo:value-to>query</elmo:value-to>
+				</rdf:Description>
+			</xsl:if>
 			<rdf:Description rdf:nodeID="f3">
 				<rdfs:label>Query</rdfs:label>
 				<elmo:applies-to>query</elmo:applies-to>
@@ -95,7 +104,11 @@
 			<rdf:Description rdf:nodeID="f4">
 				<rdfs:label>Go!</rdfs:label>
 				<elmo:appearance rdf:resource="http://bp4mc2.org/elmo/def#SubmitAppearance"/>
+				<html:link><xsl:value-of select="root/context/@docroot"/>/sparql</html:link>
 			</rdf:Description>
+		</rdf:RDF>
+		<rdf:RDF elmo:query="http://bp4mc2.org/elmo/def#Queries" elmo:appearance="http://bp4mc2.org/elmo/def#HiddenAppearance">
+			<xsl:copy-of select="root/queries/rdf:RDF/*"/>
 		</rdf:RDF>
 		<xsl:apply-templates select="root/rdf:RDF|root/res:sparql"/>
 	</results>

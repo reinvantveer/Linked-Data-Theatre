@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2html.xsl
-    VERSION  1.6.2
-    DATE     2016-03-16
+    VERSION  1.8.1-SNAPSHOT
+    DATE     2016-06-21
 
     Copyright 2012-2016
 
@@ -25,6 +25,7 @@
 <!--
     DESCRIPTION
 	Transformation of RDF document to html format. Depends upon rdf2rdfa.xsl
+	rdf2html includes the appearances templates within the subdirectory /appearances
 	
 -->
 <xsl:stylesheet version="2.0"
@@ -52,8 +53,9 @@
 <xsl:template match="*" mode="predicate">
 	<xsl:variable name="predicate"><xsl:value-of select="namespace-uri()"/><xsl:value-of select="local-name()"/></xsl:variable>
 	<a href="{$predicate}">
+		<xsl:if test="@elmo:comment!=''"><xsl:attribute name="title"><xsl:value-of select="@elmo:comment"/></xsl:attribute></xsl:if>
 		<xsl:choose>
-			<xsl:when test="@elmo:label"><xsl:value-of select="@elmo:label"/></xsl:when>
+			<xsl:when test="@elmo:label!=''"><xsl:value-of select="@elmo:label"/></xsl:when>
 			<xsl:otherwise><xsl:value-of select="local-name()"/></xsl:otherwise>
 		</xsl:choose>
 	</a>
@@ -280,6 +282,9 @@
 		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#ChartAppearance'">
 			<xsl:apply-templates select="." mode="ChartAppearance"/>
 		</xsl:when>
+		<xsl:when test="@elmo:appearance='http://bp4mc2.org/elmo/def#CesiumAppearance'">
+			<xsl:apply-templates select="." mode="CesiumAppearance"/>
+		</xsl:when>
 		<xsl:otherwise>
 			<!-- No, or an unknown appearance, use the data to select a suitable appearance -->
 			<xsl:apply-templates select="." mode="ContentAppearance"/>
@@ -330,18 +335,16 @@
 		<meta charset="utf-8"/>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<title>Linked Data Theater</title>
+		<title><xsl:value-of select="context/title"/></title>
 
 		<link rel="stylesheet" type="text/css" href="{$docroot}/css/bootstrap.min.css"/>
 		<link rel="stylesheet" type="text/css" href="{$docroot}/css/dataTables.bootstrap.min.css"/>
-		<link rel="stylesheet" type="text/css" href="{$docroot}/css/typeaheadjs.css"/>
 		<link rel="stylesheet" type="text/css" href="{$docroot}/css/bootstrap-datepicker3.min.css"/>
 		<link rel="stylesheet" type="text/css" href="{$docroot}/css/ldt-theme.css"/>
 
-		<!-- Rijkshuisstijl -->
-		<!-- <link rel="stylesheet" type="text/css" href="{$docroot}/rhs/theme.css"/> -->
+		<!-- Alternatieve stijlen -->
 		<xsl:for-each select="context/stylesheet">
-			<link rel="stylesheet" type="text/css" href="{$docroot}{@href}"/>
+			<link rel="stylesheet" type="text/css" href="{@href}"/>
 		</xsl:for-each>
 		
 		<!-- TODO: Make this generic (appearances with specific stylesheets) -->
@@ -353,7 +356,6 @@
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/jquery.dataTables.min.js"></script>
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/dataTables.bootstrap.min.js"></script>
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/bootstrap.min.js"></script>
-		<script type="text/javascript" language="javascript" src="{$docroot}/js/typeahead.bundle.min.js"></script>
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/bootstrap-datepicker.min.js"></script>
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/locales/bootstrap-datepicker.nl.min.js"></script>
 		<script type="text/javascript" language="javascript" src="{$docroot}/js/d3.v3.min.js"></script>
@@ -408,7 +410,7 @@
 	<script type="text/javascript" language="javascript" charset="utf-8">
 		<xsl:text>var elmo_language = </xsl:text>
 		<xsl:choose>
-			<xsl:when test="language='nl'">{language:{info:"_START_ tot _END_ van _TOTAL_ resultaten",search:"Zoeken:",lengthMenu:"Toon _MENU_ rijen",zeroRecords:"Niets gevonden",infoEmpty: "Geen resultaten",paginate:{first:"Eerste",previous:"Vorige",next:"Volgende",last:"Laatste"}},paging:true,searching:true,info:true}</xsl:when>
+			<xsl:when test="language='nl'">{language:{info:"_START_ tot _END_ van _TOTAL_ resultaten",search:"Filter:",lengthMenu:"Toon _MENU_ rijen",zeroRecords:"Niets gevonden",infoEmpty: "Geen resultaten",paginate:{first:"Eerste",previous:"Vorige",next:"Volgende",last:"Laatste"}},paging:true,searching:true,info:true}</xsl:when>
 			<xsl:otherwise>{};</xsl:otherwise>
 		</xsl:choose>
 		
@@ -533,7 +535,7 @@
 				margin-top: 0px;
 			}
 		</style>
-		<div class="row">
+		<!-- <div class="row"> -->
 			<ul class="nav nav-tabs">
 				<xsl:for-each select="res:binding">
 					<li>
@@ -546,7 +548,7 @@
 				<xsl:variable name="value" select="tokenize(rdf:value,'\|')"/>
 				<xsl:variable name="link" select="html:link"/>
 				<xsl:variable name="para" select="elmo:name"/>
-				<xsl:variable name="current" select="/results/context/parameters/parameter[name=$para]/value"/>
+				<xsl:variable name="current" select="/results/context/parameters/parameter[name=$para]/value[1]"/>
 				<xsl:for-each select="tokenize(rdfs:label,'\|')">
 					<xsl:variable name="pos" select="position()"/>
 					<li>
@@ -555,7 +557,7 @@
 					</li>
 				</xsl:for-each>
 			</ul>
-		</div>
+		<!-- </div> -->
 	</xsl:for-each>
 	<!-- IndexAppearance with static data -->
 	<xsl:for-each select="rdf:Description[exists(rdfs:label)][1]">
@@ -568,21 +570,32 @@
 				margin-top: 0px;
 			}
 		</style>
-		<div class="row">
+		<!-- <div class="row"> -->
 			<ul class="nav nav-tabs">
 				<xsl:variable name="value" select="tokenize(rdf:value,'\|')"/>
-				<xsl:variable name="link" select="html:link"/>
+				<xsl:variable name="link"><xsl:value-of select="html:link"/></xsl:variable>
+				<xsl:variable name="reallink">
+					<xsl:value-of select="$link"/>
+					<xsl:choose>
+						<xsl:when test="$link=''">
+							<xsl:value-of select="/results/context/url"/>
+							<xsl:text>?</xsl:text>
+							<xsl:if test="matches(/results/context/url,'/resource$')">subject=<xsl:value-of select="encode-for-uri(/results/context/subject)"/>&amp;</xsl:if>
+						</xsl:when>
+						<xsl:otherwise>?</xsl:otherwise>
+					</xsl:choose>
+				</xsl:variable>
 				<xsl:variable name="para" select="elmo:name"/>
-				<xsl:variable name="current" select="/results/context/parameters/parameter[name=$para]/value"/>
+				<xsl:variable name="current" select="/results/context/parameters/parameter[name=$para]/value[1]"/>
 				<xsl:for-each select="tokenize(rdfs:label,'\|')">
 					<xsl:variable name="pos" select="position()"/>
 					<li>
 						<xsl:if test="$value[$pos]=$current"><xsl:attribute name="class">active</xsl:attribute></xsl:if>
-						<a href="{$link}?{$para}={$value[$pos]}"><xsl:value-of select="."/></a>
+						<a href="{$reallink}{$para}={$value[$pos]}"><xsl:value-of select="."/></a>
 					</li>
 				</xsl:for-each>
 			</ul>
-		</div>
+		<!-- </div> -->
 	</xsl:for-each>
 </xsl:template>
 
@@ -601,7 +614,7 @@
 		<xsl:value-of select="../context/url"/>
 		<xsl:text>?</xsl:text>
 		<xsl:for-each select="../context/parameters/parameter"> <!-- This doesn't work if the subject is given as a parameter! -->
-			<xsl:value-of select="name"/>=<xsl:value-of select="encode-for-uri(value)"/>
+			<xsl:value-of select="name"/>=<xsl:value-of select="encode-for-uri(value[1])"/>
 			<xsl:text>&amp;</xsl:text>
 		</xsl:for-each>
 		<xsl:text>representation=</xsl:text><xsl:value-of select="encode-for-uri(@elmo:query)"/>
@@ -610,7 +623,7 @@
 	<!-- A select query will have @rdf:nodeID elements, with id 'rset' -->
 	<xsl:for-each select="rdf:Description[@rdf:nodeID='rset']">
 		<xsl:if test="$paging='true' or exists(res:solution)">
-			<div class="row">
+			<!-- <div class="row"> -->
 				<script type="text/javascript" charset="utf-8">
 					$(document).ready(function() {
 						elmo_language.paging = <xsl:value-of select="$paging"/>;
@@ -622,7 +635,7 @@
 				<table id="datatable{generate-id()}" class="table table-striped table-bordered">
 					<thead>
 						<tr>
-							<xsl:for-each select="res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
+							<xsl:for-each select="res:resultVariable[not(@elmo:appearance='http://bp4mc2.org/elmo/def#HiddenAppearance' or matches(.,'[^_]*_(label|details|count|uri)'))]">
 								<th>
 									<xsl:choose>
 										<xsl:when test="exists(@elmo:label)"><xsl:value-of select="@elmo:label"/></xsl:when>
@@ -639,7 +652,7 @@
 								<xsl:for-each-group select="res:solution" group-by="res:binding[res:variable=$key]/res:value/@rdf:resource">
 									<tr>
 										<xsl:variable name="group" select="current-group()"/>
-										<xsl:for-each select="../res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
+										<xsl:for-each select="../res:resultVariable[not(@elmo:appearance='http://bp4mc2.org/elmo/def#HiddenAppearance' or matches(.,'[^_]*_(label|details|count|uri)'))]">
 											<xsl:variable name="var" select="."/>
 											<td>
 												<!-- Remove duplicates, so still a for-each-group -->
@@ -656,7 +669,7 @@
 								<xsl:for-each select="res:solution">
 									<tr>
 										<xsl:variable name="binding" select="res:binding"/>
-										<xsl:for-each select="../res:resultVariable[not(matches(.,'[^_]*_(label|details|count|uri)'))]">
+										<xsl:for-each select="../res:resultVariable[not(@elmo:appearance='http://bp4mc2.org/elmo/def#HiddenAppearance' or matches(.,'[^_]*_(label|details|count|uri)'))]">
 											<xsl:variable name="var" select="."/>
 											<td><xsl:apply-templates select="$binding[res:variable=$var]" mode="tableobject"/></td>
 										</xsl:for-each>
@@ -667,7 +680,7 @@
 					</tbody>
 				</table>
 				<a href="{$original-link}xlsx">Excel</a>
-			</div>
+			<!-- </div> -->
 		</xsl:if>
 	</xsl:for-each>
 </xsl:template>
@@ -676,15 +689,15 @@
 	<!-- A construct query will have @rdf:about elements -->
 	<xsl:if test="exists(rdf:Description/@rdf:about)">
 		<xsl:for-each select="rdf:Description">
-			<div class="row">
+			<!-- <div class="row"> -->
 				<xsl:apply-templates select="." mode="PropertyTable"/>
-			</div>
+			<!-- </div> -->
 		</xsl:for-each>
 	</xsl:if>
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="HtmlAppearance">
-	<div class="row">
+	<!-- <div class="row"> -->
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
@@ -711,7 +724,7 @@
 				</xsl:if>
 			</div>
 		</div>
-	</div>
+	<!-- </div> -->
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="HeaderAppearance">
@@ -772,15 +785,36 @@
 					<span class="icon-bar"></span>
 				</button>
 				<xsl:if test="exists(rdf:Description/dcterms:title)">
-					<a class="navbar-brand" href="/"><xsl:value-of select="rdf:Description/dcterms:title[1]"/></a>
+					<xsl:variable name="root" select="rdf:Description/dcterms:title[1]/.."/>
+					<xsl:variable name="link">
+						<xsl:choose>
+							<xsl:when test="exists($root/html:link)"><xsl:value-of select="$root/html:link"/></xsl:when>
+							<xsl:otherwise><xsl:value-of select="$docroot"/></xsl:otherwise>
+						</xsl:choose>
+					</xsl:variable>
+					<a class="navbar-brand" href="{$link}"><xsl:value-of select="rdf:Description/dcterms:title[1]"/></a>
 				</xsl:if>
 			</div>
 			<div id="navbar" class="collapse navbar-collapse">
+				<!--
 				<ul class="nav navbar-nav">
 					<xsl:for-each select="rdf:Description[exists(rdfs:label)]"><xsl:sort select="elmo:index"/>
 						<li><a href="{html:link}"><xsl:value-of select="rdfs:label"/></a></li>
 					</xsl:for-each>
 				</ul>
+				-->
+				<ul class="nav navbar-nav">
+					<xsl:for-each select="rdf:Description[exists(rdfs:label)]"><xsl:sort select="elmo:index"/>
+						<xsl:apply-templates select="." mode="nav"/>
+					</xsl:for-each>
+				</ul>
+				<!--
+				<ul class="nav navbar-nav">
+					<xsl:for-each select="rdf:Description[1]/elmo:data"><xsl:sort select="key('nav-bnode',@rdf:nodeID)/elmo:index"/>
+						<xsl:apply-templates select="key('nav-bnode',@rdf:nodeID)" mode="nav"/>
+					</xsl:for-each>
+				</ul>
+				-->
 			</div>
 		</div>
 	</nav>
@@ -801,7 +835,13 @@
 					</ul>
 				</xsl:when>
 				<xsl:when test="exists(html:link)">
-					<a href="{html:link}"><xsl:value-of select="$label"/></a>
+					<xsl:variable name="link">
+						<xsl:value-of select="html:link"/>
+						<xsl:if test="exists(elmo:subject/@rdf:resource)">?SUBJECT=<xsl:value-of select="encode-for-uri(elmo:subject/@rdf:resource)"/></xsl:if>
+					</xsl:variable>
+					<a href="{$link}">
+						<xsl:value-of select="$label"/>
+					</a>
 				</xsl:when>
 				<xsl:otherwise>
 					<a href="#"><xsl:value-of select="$label"/></a>
@@ -890,7 +930,7 @@
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="GraphAppearance">
-	<div class="row" style="position: relative">
+	<div style="position: relative">
 		<div class="panel panel-primary" style="position:absolute;right:20px;top:50px">
 			<div class="panel-heading"><span class="glyphicon glyphicon-off" style="position:absolute;right:5px;margin-top:2px;cursor:pointer" onclick="this.parentNode.parentNode.style.display='none'"/></div>	
 			<table style="margin-left:10px">
@@ -902,7 +942,7 @@
 				</xsl:for-each>
 			</table>
 		</div>
-		<div class="panel panel-primary">
+		<div class="panel panel-primary panel-secondary">
 			<div id="graphtitle" class="panel-heading"/>
 			<div id="graph" class="panel-body"/>
 		</div>
@@ -1075,7 +1115,7 @@ table.fragment tr td{
 	position: relative;
 }
 	</style>
-	<div class="row">
+	<!-- <div class="row"> -->
 		<div class="panel panel-primary">
 			<div id="graphtitle" class="panel-heading"><xsl:value-of select="xmldocs/xmldoc/document/*[1]/*[@class='title']"/></div>
 			<div id="graph" class="panel-body">
@@ -1095,68 +1135,13 @@ table.fragment tr td{
 				</xsl:for-each>
 			</div>
 		</div>
-	</div>
+	<!-- </div> -->
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="FormAppearance">
-	<script>
-var substringMatcher = function(strs) {
-  return function findMatches(q, cb) {
-    var matches, substrRegex;
- 
-    // an array that will be populated with substring matches
-    matches = [];
- 
-    // regex used to determine if a string contains the substring `q`
-    substrRegex = new RegExp(q, 'i');
- 
-    // iterate through the pool of strings and for any string that
-    // contains the substring `q`, add it to the `matches` array
-    $.each(strs, function(i, str) {
-      if (substrRegex.test(str)) {
-        // the typeahead jQuery plugin expects suggestions to a
-        // JavaScript object, refer to typeahead docs for more info
-        matches.push({ value: str });
-      }
-    });
- 
-    cb(matches);
-  };
-};
-	</script>
-	<script>
-		<xsl:for-each select="key('rdf',rdf:Description/elmo:valuesFrom/@rdf:resource)">
-			<xsl:text>var options</xsl:text><xsl:value-of select="generate-id()"/>
-			<xsl:text>= [</xsl:text>
-			<xsl:for-each select="rdf:Description/rdfs:label">
-				<xsl:if test="position()!=1">,</xsl:if>
-				<xsl:text>'</xsl:text>
-				<xsl:value-of select="replace(.,'''','\\''')"/>
-				<xsl:text>'</xsl:text>
-			</xsl:for-each>
-			<xsl:text>];</xsl:text>
-			<xsl:text>var values</xsl:text><xsl:value-of select="generate-id()"/>
-			<xsl:text>= {</xsl:text>
-			<xsl:for-each select="rdf:Description">
-				<xsl:if test="position()!=1">,</xsl:if>
-				<xsl:text>'</xsl:text>
-				<xsl:value-of select="replace(rdfs:label[1],'''','\\''')"/>
-				<xsl:text>':{uri:'</xsl:text>
-				<xsl:value-of select="replace(@rdf:about,'''','\\''')"/>
-				<xsl:text>'</xsl:text>
-				<xsl:for-each select="*[namespace-uri()='var:']">
-					<xsl:text>,</xsl:text>
-					<xsl:value-of select="local-name()"/>
-					<xsl:text>:'</xsl:text>
-					<xsl:value-of select="."/>
-					<xsl:text>'</xsl:text>
-				</xsl:for-each>
-				<xsl:text>}</xsl:text>
-			</xsl:for-each>
-			<xsl:text>};</xsl:text>
-		</xsl:for-each>
-	</script>
-	<div class="row">
+	<script type="text/javascript" language="javascript" src="{$docroot}/js/chosen.jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="{$docroot}/css/bootstrap-chosen.css"/>
+	<!-- <div class="row"> -->
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
@@ -1165,12 +1150,17 @@ var substringMatcher = function(strs) {
 				</h3>
 			</div>
 			<div class="panel-body">
-				<form role="form" class="form-horizontal" method="post" action="{/results/context/url}">
+				<xsl:variable name="turtleEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#TurtleEditor']/elmo:applies-to"/>
+				<xsl:variable name="sparqlEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#SparqlEditor']/elmo:applies-to"/>
+				<xsl:variable name="alt-action" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#SubmitAppearance']/html:link"/>
+				<xsl:variable name="action">
+					<xsl:value-of select="$alt-action"/>
+					<xsl:if test="not($alt-action!='')"><xsl:value-of select="/results/context/url"/></xsl:if>
+				</xsl:variable>
+				<form role="form" class="form-horizontal" method="post" action="{$action}">
 					<xsl:if test="exists(rdf:Description/elmo:valueDatatype[@rdf:resource='http://purl.org/dc/dcmitype/Dataset'])">
 						<xsl:attribute name="enctype">multipart/form-data</xsl:attribute>
 					</xsl:if>
-					<xsl:variable name="turtleEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#TurtleEditor']/elmo:applies-to"/>
-					<xsl:variable name="sparqlEditorID" select="rdf:Description[elmo:appearance/@rdf:resource='http://bp4mc2.org/elmo/def#SparqlEditor']/elmo:applies-to"/>
 					<xsl:if test="$turtleEditorID!=''">
 						<link rel="stylesheet" href="{$docroot}/css/codemirror.css"/>
 						<script src="{$docroot}/js/codemirror.js"/>
@@ -1196,11 +1186,22 @@ var substringMatcher = function(strs) {
 									<xsl:when test="elmo:valuesFrom/@rdf:resource!=''">
 										<xsl:choose>
 											<xsl:when test="count(key('rdf',elmo:valuesFrom/@rdf:resource)/rdf:Description)>2">
-												<input type="text" class="form-control typeahead" id="{elmo:applies-to}"/>
-												<input type="hidden" id="{elmo:applies-to}-value" name="{elmo:applies-to}"/>
-												<xsl:for-each-group select="key('rdf',elmo:valuesFrom/@rdf:resource)/rdf:Description/*[namespace-uri()='var:']" group-by="local-name()">
-													<input type="hidden" id="{local-name()}" name="{local-name()}"/>
-												</xsl:for-each-group>
+												<div class="input-group" style="width:100%;">
+													<select data-placeholder="Select..." class="chosen-select" multiple="multiple" id="{elmo:applies-to}" name="{elmo:applies-to}">
+														<xsl:if test="exists(elmo:value-to)">
+															<xsl:attribute name="onchange">
+																<xsl:choose>
+																	<xsl:when test="elmo:value-to=$sparqlEditorID">if(this.selectedIndex!=-1) {editor.setValue($('option:selected',this).attr('rdfvalue'))};</xsl:when>
+																	<xsl:otherwise>if(this.selectedIndex!=-1) {$('#<xsl:value-of select="elmo:value-to"/>').val($('option:selected',this).attr('rdfvalue'))};</xsl:otherwise>
+																</xsl:choose>
+															</xsl:attribute>
+														</xsl:if>
+														<xsl:for-each select="key('rdf',elmo:valuesFrom/@rdf:resource)/rdf:Description"><xsl:sort select="@rdf:about"/>
+															<option value="{@rdf:about}" rdfvalue="{rdf:value}"><xsl:value-of select="rdfs:label"/></option>
+														</xsl:for-each>
+													</select>
+													<script>$('#<xsl:value-of select="elmo:applies-to"/>').chosen({max_selected_options: 1});</script>
+												</div>
 											</xsl:when>
 											<xsl:otherwise>
 												<xsl:variable name="applies" select="elmo:applies-to"/>
@@ -1232,7 +1233,7 @@ var substringMatcher = function(strs) {
 										</textarea>
 									</xsl:when>
 									<xsl:otherwise>
-										<input type="text" class="form-control" id="{$applies-to}" name="{$applies-to}" value="{/results/context/parameters/parameter[name=$applies-to]/value}"/>
+										<input type="text" class="form-control" id="{$applies-to}" name="{$applies-to}" value="{/results/context/parameters/parameter[name=$applies-to]/value[1]}"/>
 									</xsl:otherwise>
 								</xsl:choose>
 							</div>
@@ -1256,31 +1257,7 @@ var substringMatcher = function(strs) {
 				</form>
 			</div>
 		</div>
-	</div>
-	<script>
-		<xsl:for-each select="rdf:Description[exists(elmo:valuesFrom/@rdf:resource)]">
-			<xsl:variable name="id"><xsl:value-of select="elmo:applies-to"/></xsl:variable>
-			<xsl:variable name="cnt" select="count(key('rdf',elmo:valuesFrom/@rdf:resource)/rdf:Description)"/>
-			<xsl:variable name="var"><xsl:value-of select="key('rdf',elmo:valuesFrom/@rdf:resource)/generate-id()"/></xsl:variable>
-			<xsl:if test="$id!='' and $var!='' and $cnt>2">
-				$('#<xsl:value-of select="elmo:applies-to"/>').typeahead({
-				  hint: true,
-				  highlight: true,
-				  minLength: 1
-				},
-				{
-				  name: 'vars',
-				  displayKey: 'value',
-				  source: substringMatcher(options<xsl:value-of select="$var"/>),
-				}).bind('typeahead:selected',function(obj,datum) {
-					$('#<xsl:value-of select="elmo:applies-to"/>-value').val(values<xsl:value-of select="$var"/>[datum.value].uri);
-					<xsl:for-each-group select="key('rdf',elmo:valuesFrom/@rdf:resource)/rdf:Description/*[namespace-uri()='var:']" group-by="local-name()">
-						$('#<xsl:value-of select="local-name()"/>').val(values<xsl:value-of select="$var"/>[datum.value].<xsl:value-of select="local-name()"/>);
-					</xsl:for-each-group>
-				});
-			</xsl:if>
-		</xsl:for-each>
-	</script>
+	<!-- </div> -->
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="GeoAppearance">
@@ -1358,19 +1335,19 @@ var substringMatcher = function(strs) {
 		<xsl:variable name="width"><xsl:value-of select="$htmlwidth"/><xsl:if test="not($htmlwidth!='')">1000</xsl:if></xsl:variable>
 		<xsl:variable name="height"><xsl:value-of select="$htmlheight"/><xsl:if test="not($htmlheight!='')">600</xsl:if></xsl:variable>
 		
-		<div class="row">
+		<!-- <div class="row"> -->
 			<div class="panel panel-primary">
 				<div class="panel-heading"/>
 				<div class="panel-body">
 					<div id="map"></div>
 					<style>
-						<xsl:for-each select="rdf:Description[html:stylesheet!='' and elmo:applies-to!='' and elmo:applies-to!='http://bp4mc2.org/elmo/def#Appearance']">
-							.s<xsl:value-of select="elmo:applies-to"/> {
-							<xsl:value-of select="html:stylesheet"/>
-							}
 							.shidden-object {
 								display:none;
 								pointer-events: none;
+							}
+						<xsl:for-each select="rdf:Description[html:stylesheet!='' and elmo:applies-to!='' and not(matches(elmo:applies-to,'^http://bp4mc2.org/elmo/def'))]">
+							.s<xsl:value-of select="elmo:applies-to"/> {
+							<xsl:value-of select="html:stylesheet"/>
 							}
 							.edgestyle {
 								stroke: #606060;
@@ -1404,16 +1381,15 @@ var substringMatcher = function(strs) {
 							<!-- //<xsl:value-of select="string-length(geo:geometry[1])"/>-<xsl:value-of select="key('resource',elmo:style[1]/@rdf:resource)/elmo:name"/> -->
 							<xsl:variable name="link-uri">
 								<xsl:choose>
-									<xsl:when test="exists(html:link)"><xsl:value-of select="html:link/@rdf:resource"/></xsl:when>
-									<xsl:otherwise><xsl:value-of select="@rdf:about"/></xsl:otherwise>
+									<xsl:when test="exists(html:link)"><xsl:copy-of select="html:link"/></xsl:when>
+									<xsl:otherwise><html:link rdf:resource="{@rdf:about}"/></xsl:otherwise>
 								</xsl:choose>
 							</xsl:variable>
 							<xsl:variable name="resource-uri">
-								<!-- TIJDELIJK -->
-								<xsl:choose>
-									<xsl:when test="exists(html:link)"><xsl:value-of select="$link-uri"/></xsl:when>
-									<xsl:otherwise><xsl:call-template name="resource-uri"><xsl:with-param name="uri" select="$link-uri"/></xsl:call-template></xsl:otherwise>
-								</xsl:choose>
+								<xsl:call-template name="resource-uri">
+									<xsl:with-param name="uri" select="$link-uri/html:link/@rdf:resource"/>
+									<xsl:with-param name="var" select="$link-uri/html:link"/>
+								</xsl:call-template>
 							</xsl:variable>
 							<xsl:variable name="styleclass">
 								<xsl:choose>
@@ -1432,19 +1408,19 @@ var substringMatcher = function(strs) {
 					</script>
 				</div>
 			</div>
-		</div>
+		<!-- </div> -->
 	</xsl:if>
 	
 </xsl:template>
 
 <xsl:template match="rdf:RDF" mode="ChartAppearance">
-	<div class="row">
+	<!-- <div class="row"> -->
 		<div class="panel panel-primary">
 			<div class="panel-heading"/>
 			<div id="blub" class="panel-body">
 			</div>
 		</div>
-	</div>
+	<!-- </div> -->
 	<style>
 		.bar {
 		  fill: steelblue;
@@ -1579,5 +1555,7 @@ var substringMatcher = function(strs) {
 	<link rel="stylesheet" href="{$docroot}/css/treestyle.css"/>
 	<script src="{$docroot}/js/MultiNestedList.js"></script>
 </xsl:template>
+
+<xsl:include href="appearances/CesiumAppearance.xsl"/>
 
 </xsl:stylesheet>

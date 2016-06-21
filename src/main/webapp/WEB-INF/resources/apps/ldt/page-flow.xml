@@ -1,8 +1,8 @@
 <!--
 
     NAME     page-flow.xml
-    VERSION  1.6.3
-    DATE     2016-03-29
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -46,11 +46,24 @@
 	<!-- Sparql endpoint (at front stage - if available) -->
 	<page path="(((?!sparql).)*)/sparql" model="pipelines/sparql.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+		<setvalue ref="theatre/format" parameter="format"/>
 	</page>
 	
 	<!-- Backstage -->
 	<page path="(((?!backstage).)*)/backstage" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/representation">http://bp4mc2.org/elmo/def#BackstageRepresentation</setvalue>
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+	</page>
+	<page path="(((?!backstage).)*)/backstage/vocabulary" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/representation">http://bp4mc2.org/elmo/def#BackstageVocabularyRepresentation</setvalue>
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+	</page>
+	<page path="(((?!backstage).)*)/backstage/export\.([^ ]*)" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/representation">http://bp4mc2.org/elmo/def#BackstageExport</setvalue>
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+		<setvalue ref="theatre/format" matcher-group="3"/>
+	</page>
+	<page path="(((?!backstage).)*)/backstage/import" model="pipelines/container.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
 	</page>
 	<page path="(((?!backstage).)*)/backstage/rep" model="pipelines/container.xpl" default-submission="config.xml" public-methods="#all">
@@ -65,25 +78,13 @@
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
 	</page>
 
-	<!-- Request header information (for debugging purposes in production) -->
-	<page path="(((?!header).)*)/header" model="pipelines/header.xpl" default-submission="config.xml" public-methods="#all"/>
-	<page path="(((?!header).)*)/header.json" model="pipelines/jsonheader.xpl" default-submission="config.xml" public-methods="#all"/>
-	<!-- <page path="/admin/header" model="pipelines/header.xpl" default-submission="config.xml" public-methods="#all"/> -->
-
-	<!-- Version header information (for debugging purposes) -->
-	<page path="(((?!version).)*)/version" model="pipelines/version.xpl" default-submission="config.xml" public-methods="#all">
-		<setvalue ref="theatre/subdomain" matcher-group="1"/>
-		<setvalue ref="theatre/format" parameter="format"/>
-		<setvalue ref="theatre/subject" parameter="subject"/>
-	</page>
-	<!-- <page path="/admin/version" model="pipelines/version.xpl" default-submission="config.xml" public-methods="#all"/> -->
-	
 	<!-- query -->
 	<page path="(((?!query).)*)/query/([^\.]*)\.([^ ]*)" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
 		<!-- <setvalue ref="submission/query" matcher-group="3"/> -->
 		<setvalue ref="theatre/format" matcher-group="4"/>
 		<setvalue ref="theatre/subject" parameter="subject"/>
+		<setvalue ref="theatre/representation" parameter="representation"/>
 	</page>
 	<page path="(((?!query).)*)/query/([^ ]*)" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
@@ -112,12 +113,24 @@
 		<!-- <setvalue ref="submission/query">resource</setvalue> -->
 		<setvalue ref="theatre/subject" parameter="subject"/>
 		<setvalue ref="theatre/format" parameter="format"/>
+		<setvalue ref="theatre/representation" parameter="representation"/>
 	</page>
 	
 	<!-- def uri (give some information about a hash URI) -->
 	<page path="(((?!def).)*)/def(/[^ ]*)*" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/subdomain" matcher-group="1"/>
-		<!-- <setvalue ref="submission/query">vocabulary</setvalue> -->
+		<setvalue ref="theatre/subject" parameter="subject"/>
+		<setvalue ref="theatre/format" parameter="format"/>
+		<setvalue ref="theatre/representation" parameter="representation"/>
+	</page>
+	<!-- context uri (same as def uri, but should result in a JSON-LD context representation -->
+	<page path="(((?!context).)*)/context(/[^\.]*)*\.([^ ]*)" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+		<setvalue ref="theatre/subject" parameter="subject"/>
+		<setvalue ref="theatre/format" matcher-group="4"/>
+	</page>
+	<page path="(((?!context).)*)/context(/[^ ]*)*" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
 		<setvalue ref="theatre/subject" parameter="subject"/>
 		<setvalue ref="theatre/format" parameter="format"/>
 	</page>
@@ -179,11 +192,30 @@
 		<setvalue ref="theatre/subject" parameter="subject"/>
 	</page>
 	
+	<!-- Request header information (for debugging purposes in production) -->
+	<page path="(((?!header).)*)/header" model="pipelines/header.xpl" default-submission="config.xml" public-methods="#all"/>
+	<page path="(((?!header).)*)/header.json" model="pipelines/jsonheader.xpl" default-submission="config.xml" public-methods="#all"/>
+	<!-- <page path="/admin/header" model="pipelines/header.xpl" default-submission="config.xml" public-methods="#all"/> -->
+
+	<!-- Version header information (for debugging purposes) -->
+	<page path="(((?!version).)*)/version" model="pipelines/version.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+		<setvalue ref="theatre/format" parameter="format"/>
+		<setvalue ref="theatre/subject" parameter="subject"/>
+	</page>
+	<!-- <page path="/admin/version" model="pipelines/version.xpl" default-submission="config.xml" public-methods="#all"/> -->
+
+	<!-- Info version (human-friendly version of the version-page) -->
+	<page path="(((?!info).)*)/info" model="pipelines/info.xpl" default-submission="config.xml" public-methods="#all">
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
+	</page>
+	
 	<!-- Administrator pages -->
 	<!-- Failsafe, always show a admin page -->
-	<page path="/admin(/[^ ]*)?" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
+	<page path="(((?!admin).)*)/admin(/[^ ]*)?" model="pipelines/query.xpl" default-submission="config.xml" public-methods="#all">
 		<setvalue ref="theatre/query">admin</setvalue>
 		<setvalue ref="theatre/format" parameter="format"/>
+		<setvalue ref="theatre/subdomain" matcher-group="1"/>
 	</page>
 	
 	<!-- Default indexpage -->

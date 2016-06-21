@@ -1,8 +1,8 @@
 <!--
 
     NAME     sparql.xpl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.1-SNAPSHOT
+    DATE     2016-06-21
 
     Copyright 2012-2016
 
@@ -50,6 +50,7 @@
 				<include>/request/request-url</include>
 				<include>/request/parameters/parameter</include>
 				<include>/request/remote-user</include>
+				<include>/request/request-path</include>
 			</config>
 		</p:input>
 		<p:output name="data" id="request"/>
@@ -82,7 +83,7 @@
 				<p:when test="context/parameters/parameter[name='query']/value!=''">
 					<p:processor name="oxf:xforms-submission">
 						<p:input name="submission" transform="oxf:xslt" href="#context">
-							<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
+							<xforms:submission method="get" xsl:version="2.0" action="{context/local-endpoint}">
 								<xforms:header>
 									<xforms:name>Accept</xforms:name>
 									<xforms:value>application/sparql-results+xml</xforms:value>
@@ -115,39 +116,133 @@
 				</p:otherwise>
 			</p:choose>
 			
-			<!-- Convert sparql to rdfa -->
-			<p:processor name="oxf:xslt">
-				<p:input name="data" href="aggregate('root',#sparql,#context)"/>
-				<p:input name="config" href="../transformations/sparql2rdfaform.xsl"/>
-				<p:output name="data" id="rdfa"/>
-			</p:processor>
-
-			<!-- Transform rdfa to html -->
-			<p:processor name="oxf:xslt">
-				<p:input name="data" href="#rdfa"/>
-				<p:input name="config" href="../transformations/rdf2html.xsl"/>
-				<p:output name="data" id="html"/>
-			</p:processor>
-			<!-- Convert XML result to HTML -->
-			<p:processor name="oxf:html-converter">
-				<p:input name="config">
-					<config>
-						<encoding>utf-8</encoding>
-						<public-doctype>-//W3C//DTD XHTML 1.0 Strict//EN</public-doctype>
-					</config>
-				</p:input>
-				<p:input name="data" href="#html" />
-				<p:output name="data" id="htmlres" />
-			</p:processor>
-			<!-- Serialize -->
-			<p:processor name="oxf:http-serializer">
-				<p:input name="config">
-					<config>
-						<cache-control><use-local-cache>false</use-local-cache></cache-control>
-					</config>
-				</p:input>
-				<p:input name="data" href="#htmlres"/>
-			</p:processor>
+			<p:choose href="#context">
+				<!-- XML -->
+				<p:when test="context/format='application/xml'">
+					<p:processor name="oxf:xml-serializer">
+						<p:input name="config">
+							<config/>
+						</p:input>
+						<p:input name="data" href="#sparql"/>
+					</p:processor>
+				</p:when>
+				<!-- XLSX -->
+				<p:when test="context/format='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'">
+					<!-- Convert sparql to rdfa -->
+					<p:processor name="oxf:xslt">
+						<p:input name="data" href="aggregate('root',#sparql,#context)"/>
+						<p:input name="config" href="../transformations/sparql2rdfa.xsl"/>
+						<p:output name="data" id="rdfa"/>
+					</p:processor>
+					<!-- Transform -->
+					<p:processor name="oxf:xslt">
+						<p:input name="data" href="aggregate('results',#rdfa)"/>
+						<p:input name="config" href="../transformations/rdf2xls.xsl"/>
+						<p:output name="data" id="xlsxml"/>
+					</p:processor>
+					<!-- Serialize -->
+					<p:processor name="oxf:excel-serializer">
+						<p:input name="config">
+							<config>
+								<content-type>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</content-type>
+								<header>
+									<name>Content-Disposition</name>
+									<value>attachment; filename=result.xlsx</value>
+								</header>
+							</config>
+						</p:input>
+						<p:input name="data" href="#xlsxml"/>
+					</p:processor>
+				</p:when>
+				<p:otherwise>
+					<!-- Get possible examples queries -->
+					<p:processor name="oxf:xforms-submission">
+						<p:input name="submission" transform="oxf:xslt" href="#context">
+							<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
+								<xforms:header>
+									<xforms:name>Accept</xforms:name>
+									<xforms:value>application/rdf+xml</xforms:value>
+								</xforms:header>
+								<xforms:setvalue ev:event="xforms-submit-error" ref="error" value="event('response-body')"/>
+								<xforms:setvalue ev:event="xforms-submit-error" ref="error/@type" value="event('error-type')"/>
+							</xforms:submission>
+						</p:input>
+						<p:input name="request" transform="oxf:xslt" href="#context">
+							<parameters xsl:version="2.0">
+								<query>
+								<![CDATA[
+									PREFIX elmo: <http://bp4mc2.org/elmo/def#>
+									CONSTRUCT {
+										?q rdfs:label ?qlabel.
+										?q rdf:value ?query
+									}
+									WHERE {
+										GRAPH <]]><xsl:value-of select="context/representation-graph/@uri"/><![CDATA[> {
+											?q rdf:type elmo:Query.
+											?q rdfs:label ?qlabel.
+											?q elmo:query ?query
+										}
+									}
+								]]>
+								</query>
+								<default-graph-uri/>
+								<error type=""/>
+							</parameters>
+						</p:input>
+						<p:output name="response" id="queries"/>
+					</p:processor>
+					<!-- Get predefined representation from LDT for SPARQL endpoint -->
+					<p:processor name="oxf:url-generator">
+						<p:input name="config" transform="oxf:xslt" href="#context">
+							<config xsl:version="2.0">
+								<url>../representations/SPARQLRepresentation.xml</url>
+								<content-type>application/xml</content-type>
+							</config>
+						</p:input>
+						<p:output name="data" id="sparqlrep"/>
+					</p:processor>
+					<!-- Convert sparql to rdfa -->
+					<p:processor name="oxf:xslt">
+						<p:input name="data" href="aggregate('root',#sparql,#context,aggregate('representation',#sparqlrep),aggregate('queries',#queries))"/>
+						<p:input name="config" href="../transformations/sparql2rdfaform.xsl"/>
+						<p:output name="data" id="rdfa"/>
+					</p:processor>
+<!--
+<p:processor name="oxf:xml-serializer">
+	<p:input name="config">
+		<config/>
+	</p:input>
+	<p:input name="data" href="#rdfa"/>
+</p:processor>
+-->
+					<!-- Transform rdfa to html -->
+					<p:processor name="oxf:xslt">
+						<p:input name="data" href="#rdfa"/>
+						<p:input name="config" href="../transformations/rdf2html.xsl"/>
+						<p:output name="data" id="html"/>
+					</p:processor>
+					<!-- Convert XML result to HTML -->
+					<p:processor name="oxf:html-converter">
+						<p:input name="config">
+							<config>
+								<encoding>utf-8</encoding>
+								<public-doctype>-//W3C//DTD XHTML 1.0 Strict//EN</public-doctype>
+							</config>
+						</p:input>
+						<p:input name="data" href="#html" />
+						<p:output name="data" id="htmlres" />
+					</p:processor>
+					<!-- Serialize -->
+					<p:processor name="oxf:http-serializer">
+						<p:input name="config">
+							<config>
+								<cache-control><use-local-cache>false</use-local-cache></cache-control>
+							</config>
+						</p:input>
+						<p:input name="data" href="#htmlres"/>
+					</p:processor>
+				</p:otherwise>
+			</p:choose>
 	
 		</p:when>
 		<p:otherwise>

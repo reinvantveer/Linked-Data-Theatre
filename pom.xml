@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nl.architolk.ldt</groupId>
 	<artifactId>ldt</artifactId>
-	<version>1.6.4-SNAPSHOT</version>
+	<version>1.8.1-SNAPSHOT</version>
 	<name>ldt</name>
 	<packaging>war</packaging>
 	<properties>
@@ -10,9 +10,9 @@
 		<buildTimestamp>${maven.build.timestamp}</buildTimestamp>
 		<license-maven-plugin.version>2.11</license-maven-plugin.version>
 		<license.failIfMissing>false</license.failIfMissing>
-		<release.version>1.6.0</release.version>
-		<release.date>2016-03-13</release.date>
-		<patch.date>2016-03-29</patch.date>
+		<release.version>1.8.0</release.version>
+		<release.date>2016-06-15</release.date>
+		<patch.date>2016-06-15</patch.date>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -35,18 +35,6 @@
 								<include>WEB-INF/resources/apps/ldt/version.xml</include>
 							</includes>
 							<filtering>true</filtering>
-						</resource>
-						<resource>
-							<directory>morphrdb</directory>
-							<includes>
-								<include>WEB-INF/lib/**</include>
-							</includes>
-							<excludes>
-								<exclude>WEB-INF/lib/log4j-1.2.14.jar</exclude>
-								<exclude>WEB-INF/lib/scala-library.jar</exclude>
-								<exclude>WEB-INF/lib/slf4j-api-1.5.8.jar</exclude>
-								<exclude>WEB-INF/lib/slf4j-log4j12-1.5.8.jar</exclude>
-							</excludes>
 						</resource>
 						<resource>
 							<directory>orbeon</directory>

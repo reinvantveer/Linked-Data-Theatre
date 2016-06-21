@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2jsonld.xsl
-    VERSION  1.6.3
-    DATE     2016-03-29
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 

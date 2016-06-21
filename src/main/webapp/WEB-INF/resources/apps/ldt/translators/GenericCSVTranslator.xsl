@@ -1,8 +1,8 @@
 <!--
 
     NAME     GenericCSVTranslator.xsl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -52,6 +52,7 @@
 								<csvw:row>
 									<csvw:Row rdf:about="{$container}/{$csvname}/r{$pos}">
 										<csvw:rownum><xsl:value-of select="$pos"/></csvw:rownum>
+										<rdfs:label>#<xsl:value-of select="$pos"/></rdfs:label>
 										<csvw:describes>
 											<rdf:Description rdf:about="{$container}/{$csvname}/r{$pos}s">
 												<xsl:for-each select="column">

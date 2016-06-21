@@ -1,8 +1,8 @@
 <!--
 
     NAME     container.xpl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -99,11 +99,35 @@
 				<include>/request/request-url</include>
 				<include>/request/parameters/parameter</include>
 				<include>/request/remote-user</include>
+				<include>/request/method</include>
+				<include>/request/request-path</include>
 			</config>
 		</p:input>
 		<p:output name="data" id="request"/>
 	</p:processor>
 
+	<!-- /request/body can only be obtained when no parameters are serialized within the body! -->
+	<p:choose href="#request">
+		<p:when test="not(exists(/request/parameters))">
+			<p:processor name="oxf:request">
+				<p:input name="config">
+					<config stream-type="xs:anyURI">
+						<include>/request/body</include>
+					</config>
+				</p:input>
+				<p:output name="data" id="requestbody"/>
+			</p:processor>
+		</p:when>
+		<p:otherwise>
+			<p:processor name="oxf:identity">
+				<p:input name="data">
+					<request />
+				</p:input>
+				<p:output name="data" id="requestbody"/>
+			</p:processor>
+		</p:otherwise>
+	</p:choose>
+	
 	<!-- Get credentials and user roles -->
 	<p:processor name="oxf:request-security">
 		<p:input name="config" transform="oxf:xslt" href="#instance">        
@@ -129,10 +153,11 @@
 	
 	<!-- Create context -->
 	<p:processor name="oxf:xslt">
-		<p:input name="data" href="aggregate('croot',#instance,#request,#roles)"/>
+		<p:input name="data" href="aggregate('croot',#instance,#request,#requestbody,#roles)"/>
 		<p:input name="config" href="../transformations/context.xsl"/>
 		<p:output name="data" id="context"/>
 	</p:processor>
+
 
 	<p:choose href="#context">
 		<p:when test="matches(context/subject,'backstage/rep$') and context/back-of-stage!=''">
@@ -185,6 +210,35 @@
 										<xsl:otherwise>CONSTRUCT {?x?x?x} WHERE {?x?x?x}</xsl:otherwise>
 									</xsl:choose>
 								</fetchquery>
+								<contains>
+									<representation uri="http://bp4mc2.org/elmo/def#BackstageMenu"/>
+								</contains>
+							</container>
+						</xsl:template>
+					</xsl:stylesheet>
+				</p:input>
+				<p:input name="data" href="#context"/>
+				<p:output name="data" id="containercontext"/>
+			</p:processor>
+		</p:when>
+		<p:when test="matches(context/subject,'backstage/import$') and context/back-of-stage!=''">
+			<!-- Special container: backstage import! -->
+			<p:processor name="oxf:xslt">
+				<p:input name="config">
+					<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+						<xsl:template match="/">
+							<container>
+								<label>Backstage of &lt;<xsl:value-of select="context/back-of-stage"/>></label>
+								<url><xsl:value-of select="context/back-of-stage"/></url>
+								<user-role/>
+								<translator/>
+								<version-url><xsl:value-of select="context/back-of-stage"/></version-url>
+								<representation>http://bp4mc2.org/elmo/def#UploadRepresentation</representation>
+								<postquery/>
+								<fetchquery>CONSTRUCT {?x?x?x} WHERE {?x?x?x}</fetchquery>
+								<contains>
+									<representation uri="http://bp4mc2.org/elmo/def#BackstageMenu"/>
+								</contains>
 							</container>
 						</xsl:template>
 					</xsl:stylesheet>
@@ -260,18 +314,30 @@
 									</xsl:choose>
 									<representation><xsl:value-of select="elmo:representation/@rdf:resource"/></representation>
 									<postquery><xsl:value-of select="normalize-space(translate(elmo:query,$returns,$noreturns))"/></postquery>
-									<fetchquery>
-										<![CDATA[
-											CONSTRUCT {
-												?s?p?o
-											}
-											WHERE {
-												GRAPH <]]><xsl:value-of select="@rdf:about"/><![CDATA[> {
-													?s?p?o
-												}
-											}
-										]]>
-									</fetchquery>
+									<xsl:choose>
+										<xsl:when test="elmo:representation/@rdf:resource='http://bp4mc2.org/elmo/def#UploadRepresentation'">
+											<fetchquery>CONSTRUCT {?x?x?x} WHERE {?x?x?x}</fetchquery>
+										</xsl:when>
+										<xsl:otherwise>
+											<fetchquery>
+												<![CDATA[
+													CONSTRUCT {
+														?s?p?o
+													}
+													WHERE {
+														GRAPH <]]><xsl:value-of select="@rdf:about"/><![CDATA[> {
+															?s?p?o
+														}
+													}
+												]]>
+											</fetchquery>
+										</xsl:otherwise>
+									</xsl:choose>
+									<contains>
+										<xsl:for-each select="elmo:contains">
+											<representation uri="{@rdf:resource}"/>
+										</xsl:for-each>
+									</contains>
 								</xsl:for-each>
 							</container>
 						</xsl:template>
@@ -282,12 +348,12 @@
 			</p:processor>
 		</p:otherwise>
 	</p:choose>
-<!--	
+<!--
 <p:processor name="oxf:xml-serializer">
 	<p:input name="config">
 		<config/>
 	</p:input>
-	<p:input name="data" href="#containercontext"/>
+	<p:input name="data" href="#context"/>
 </p:processor>
 -->
 	<p:choose href="#containercontext">
@@ -666,6 +732,7 @@
 						</p:when>
 						<p:otherwise>
 							<p:choose href="#result">
+								<!-- Succes, so redirect back to original site -->
 								<p:when test="response='succes'">
 									<p:processor name="oxf:html-converter">
 										<p:input name="config">
@@ -693,6 +760,7 @@
 								</p:when>
 								<p:otherwise>
 									<!-- Convert result to turtle -->
+									<!-- This branch is only active when an error occurs: not very nice, the code is a duplicate of the code in the other branch ("show old data") -->
 									<p:processor name="oxf:xslt">
 										<p:input name="config">
 											<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -707,12 +775,85 @@
 										<p:output name="data" id="turtle"/>
 									</p:processor>
 
+									<!-- If the container contains some representations, we should also get those representations! -->
+									<!-- TODO: A better solution should be the integration of container.xpl and query.xpl, this needs refactoring -->
+									<!-- TODO: The p:choose also exists in the "show old data" branch: duplicate code, this needs refactoring -->
+									<p:choose href="#containercontext">
+										<p:when test="substring-after(contains/representation[1]/@uri,'http://bp4mc2.org/elmo/def#')!=''">
+											<!-- Special case: representation is a file (LDT backstage) -->
+											<p:processor name="oxf:url-generator">
+												<p:input name="config" transform="oxf:xslt" href="#context">
+													<config xsl:version="2.0">
+														<url>../representations/<xsl:value-of select="substring-after(contains/representation[1]/@uri,'http://bp4mc2.org/elmo/def#')"/>.xml</url>
+														<content-type>application/xml</content-type>
+													</config>
+												</p:input>
+												<p:output name="data" id="representations"/>
+											</p:processor>
+										</p:when>
+										<p:when test="exists(container/contains/representation)">
+											<p:processor name="oxf:xforms-submission">
+												<p:input name="submission" transform="oxf:xslt" href="#context">
+													<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
+														<xforms:header>
+															<xforms:name>Accept</xforms:name>
+															<xforms:value>application/rdf+xml</xforms:value>
+														</xforms:header>
+														<xforms:setvalue ev:event="xforms-submit-error" ref="error" value="event('response-body')"/>
+														<xforms:setvalue ev:event="xforms-submit-error" ref="error/@type" value="event('error-type')"/>
+													</xforms:submission>
+												</p:input>
+												<p:input name="request" transform="oxf:xslt" href="aggregate('root',#context,#containercontext)">
+													<parameters xsl:version="2.0">
+														<query>
+														<![CDATA[
+															PREFIX elmo: <http://bp4mc2.org/elmo/def#>
+															CONSTRUCT {
+																?rep ?p ?o.
+																?data ?dp ?do.
+																?do ?dop ?doo.
+																?doo ?doop ?dooo.
+															}
+															WHERE {
+																GRAPH <]]><xsl:value-of select="root/context/representation-graph/@uri"/><![CDATA[> {
+																	<]]><xsl:value-of select="root/container/url"/><![CDATA[> elmo:contains ?rep.
+																	?rep ?p ?o.
+																	?rep elmo:data ?data.
+																	?data ?dp ?do.
+																	OPTIONAL {
+																		?do ?dop ?doo.
+																		OPTIONAL {
+																			?doo ?doop ?dooo
+																		}
+																	}
+																}
+															}
+														]]>
+														</query>
+														<default-graph-uri/>
+														<error type=""/>
+													</parameters>
+												</p:input>
+												<p:output name="response" id="representations"/>
+											</p:processor>
+										</p:when>
+										<p:otherwise>
+											<p:processor name="oxf:identity">
+												<p:input name="data">
+													<representations />
+												</p:input>
+												<p:output name="data" id="representations"/>
+											</p:processor>
+										</p:otherwise>
+									</p:choose>
+					
 									<!-- Convert turtle to rdfa -->
 									<p:processor name="oxf:xslt">
-										<p:input name="data" href="aggregate('root',#context,#turtle,#containercontext,#result)"/>
+										<p:input name="data" href="aggregate('root',#context,#turtle,#containercontext,#result,#representations)"/>
 										<p:input name="config" href="../transformations/ttl2rdfaform.xsl"/>
 										<p:output name="data" id="rdfa"/>
 									</p:processor>
+
 									<!-- Transform rdfa to html -->
 									<p:processor name="oxf:xslt">
 										<p:input name="data" href="#rdfa"/>
@@ -745,6 +886,54 @@
 						</p:otherwise>
 					</p:choose>
 				</p:when>
+				<!-- Upload via REST service: separate routine (TODO: should be incorporated!) -->
+				<p:when test="exists(root/context/upload-file/@action)">
+					<p:processor name="oxf:sql">
+						<p:input name="data" href="#context"/>
+						<p:input name="config">
+							<sql:config>
+								<sql:connection>
+									<sql:datasource>virtuoso</sql:datasource>
+									<sql:execute>
+										<sql:call>
+											{call ldt.multi_update_container(<sql:param type="xs:string" select="substring-after(context/upload-file,'file:/')"/>,'ttl',<sql:param type="xs:string" select="context/back-of-stage"/>,<sql:param type="xs:string" select="context/back-of-stage"/>,<sql:param type="xs:string" select="context/back-of-stage"/>,<sql:param type="xs:string" select="context/upload-file/@action"/>,'')}
+										</sql:call>
+										<sql:result-set>
+											<response>
+												<sql:row-iterator>
+													<sql:get-column-value type="xs:string" column="message"/>
+												</sql:row-iterator>
+											</response>
+										</sql:result-set>
+										<sql:no-results>
+											<response>No results</response>
+										</sql:no-results>
+									</sql:execute>
+								</sql:connection>
+							</sql:config>
+						</p:input>
+						<p:output name="data" id="result"/>
+					</p:processor>
+					<!-- Convert XML result to plain text -->
+					<p:processor name="oxf:text-converter">
+						<p:input name="config">
+							<config>
+								<encoding>utf-8</encoding>
+							</config>
+						</p:input>
+						<p:input name="data" href="#result" />
+						<p:output name="data" id="converted" />
+					</p:processor>
+					<!-- Serialize -->
+					<p:processor name="oxf:http-serializer">
+						<p:input name="config">
+							<config>
+								<cache-control><use-local-cache>false</use-local-cache></cache-control>
+							</config>
+						</p:input>
+						<p:input name="data" href="#converted"/>
+					</p:processor>
+				</p:when>
 				<!-- Show old data -->
 				<p:otherwise>
 					<p:processor name="oxf:xforms-submission">
@@ -775,9 +964,80 @@
 						<p:output name="data" id="ttl"/>
 					</p:processor>
 
+					<!-- If the container contains some representations, we should also get those representations! -->
+					<!-- TODO: A better solution should be the integration of container.xpl and query.xpl, this needs refactoring -->
+					<p:choose href="#containercontext">
+						<p:when test="substring-after(container/contains/representation[1]/@uri,'http://bp4mc2.org/elmo/def#')!=''">
+							<!-- Special case: representation is a file (LDT backstage) -->
+							<p:processor name="oxf:url-generator">
+								<p:input name="config" transform="oxf:xslt" href="#containercontext">
+									<config xsl:version="2.0">
+										<url>../representations/<xsl:value-of select="substring-after(container/contains/representation[1]/@uri,'http://bp4mc2.org/elmo/def#')"/>.xml</url>
+										<content-type>application/xml</content-type>
+									</config>
+								</p:input>
+								<p:output name="data" id="representations"/>
+							</p:processor>
+						</p:when>
+						<p:when test="exists(container/contains/representation)">
+							<p:processor name="oxf:xforms-submission">
+								<p:input name="submission" transform="oxf:xslt" href="#context">
+									<xforms:submission method="get" xsl:version="2.0" action="{context/configuration-endpoint}">
+										<xforms:header>
+											<xforms:name>Accept</xforms:name>
+											<xforms:value>application/rdf+xml</xforms:value>
+										</xforms:header>
+										<xforms:setvalue ev:event="xforms-submit-error" ref="error" value="event('response-body')"/>
+										<xforms:setvalue ev:event="xforms-submit-error" ref="error/@type" value="event('error-type')"/>
+									</xforms:submission>
+								</p:input>
+								<p:input name="request" transform="oxf:xslt" href="aggregate('root',#context,#containercontext)">
+									<parameters xsl:version="2.0">
+										<query>
+										<![CDATA[
+											PREFIX elmo: <http://bp4mc2.org/elmo/def#>
+											CONSTRUCT {
+												?rep ?p ?o.
+												?data ?dp ?do.
+												?do ?dop ?doo.
+												?doo ?doop ?dooo.
+											}
+											WHERE {
+												GRAPH <]]><xsl:value-of select="root/context/representation-graph/@uri"/><![CDATA[> {
+													<]]><xsl:value-of select="root/container/url"/><![CDATA[> elmo:contains ?rep.
+													?rep ?p ?o.
+													?rep elmo:data ?data.
+													?data ?dp ?do.
+													OPTIONAL {
+														?do ?dop ?doo.
+														OPTIONAL {
+															?doo ?doop ?dooo
+														}
+													}
+												}
+											}
+										]]>
+										</query>
+										<default-graph-uri/>
+										<error type=""/>
+									</parameters>
+								</p:input>
+								<p:output name="response" id="representations"/>
+							</p:processor>
+						</p:when>
+						<p:otherwise>
+							<p:processor name="oxf:identity">
+								<p:input name="data">
+									<representations />
+								</p:input>
+								<p:output name="data" id="representations"/>
+							</p:processor>
+						</p:otherwise>
+					</p:choose>
+									
 					<!-- Convert turtle to rdfa -->
 					<p:processor name="oxf:xslt">
-						<p:input name="data" href="aggregate('root',#context,#ttl,#sparql,#containercontext)"/>
+						<p:input name="data" href="aggregate('root',#context,#ttl,aggregate('sparql',#sparql),#containercontext,#representations)"/>
 						<p:input name="config" href="../transformations/ttl2rdfaform.xsl"/>
 						<p:output name="data" id="rdfa"/>
 					</p:processor>

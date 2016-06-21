@@ -1,8 +1,8 @@
 <!--
 
     NAME     version.xpl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -57,6 +57,7 @@
 				<include>/request/request-url</include>
 				<include>/request/parameters/parameter</include>
 				<include>/request/remote-user</include>
+				<include>/request/request-path</include>
 			</config>
 		</p:input>
 		<p:output name="data" id="request"/>
@@ -81,12 +82,30 @@
 		<p:output name="data" id="context"/>
 	</p:processor>
 	
-	<p:processor name="oxf:xml-serializer">
-		<p:input name="config">
-			<config>
-			</config>
-		</p:input>
-		<p:input name="data" href="#context"/>
-	</p:processor>
-
+	<p:choose href="#instance">
+		<!-- Only show version information in development-mode -->
+		<p:when test="theatre/@env='dev'">
+			<p:processor name="oxf:xml-serializer">
+				<p:input name="config">
+					<config>
+					</config>
+				</p:input>
+				<p:input name="data" href="#context"/>
+			</p:processor>
+		</p:when>
+		<p:otherwise>
+			<p:processor name="oxf:http-serializer">
+				<p:input name="config">
+					<config>
+						<cache-control><use-local-cache>false</use-local-cache></cache-control>
+						<status-code>404</status-code>
+					</config>
+				</p:input>
+				<p:input name="data">
+					<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string" content-type="text/plain"/>
+				</p:input>
+			</p:processor>
+		</p:otherwise>
+	</p:choose>
+	
 </p:config>

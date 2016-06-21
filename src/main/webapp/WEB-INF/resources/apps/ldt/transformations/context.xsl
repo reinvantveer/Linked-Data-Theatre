@@ -1,8 +1,8 @@
 <!--
 
     NAME     context.xsl
-    VERSION  1.6.3
-    DATE     2016-03-29
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -24,15 +24,20 @@
 -->
 <!--
   DESCRIPTION
-  Generates the context, used in the version.xpl, query.xpl and container.xpl pipelines
+  Generates the context, used in the info.xpl, version.xpl, query.xpl, sparql.xpl and container.xpl pipelines
   
 -->
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 	<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="no"/>
 	
 	<xsl:template match="/root|/croot">
-		<xsl:variable name="domain" select="request/headers/header[name='host']/value"/>
+		<xsl:variable name="uri-filter">[^a-zA-Z0-9:\.\-_~/()#]</xsl:variable>
+		<xsl:variable name="x-forwarded-host"><xsl:value-of select="replace(request/headers/header[name='x-forwarded-host']/value,'^([^,]+).*$','$1')"/></xsl:variable>
+		<xsl:variable name="domain">
+			<xsl:value-of select="$x-forwarded-host"/> <!-- Use original hostname in case of proxy, first one in case of multiple proxies -->
+			<xsl:if test="$x-forwarded-host=''"><xsl:value-of select="request/headers/header[name='host']/value"/></xsl:if>
+		</xsl:variable>
 		<xsl:variable name="docroot"><xsl:value-of select="theatre/site[@domain=$domain]/@docroot"/></xsl:variable>
 		<xsl:variable name="stylesheet"><xsl:value-of select="theatre/site[@domain=$domain]/@css"/></xsl:variable>
 		<xsl:variable name="subdomain1" select="substring-after(theatre/subdomain,$docroot)"/>
@@ -72,6 +77,15 @@
 			</xsl:if>
 		</xsl:variable>
 		
+		<!-- URL should be request-url, but in case of proxy we need to replace the host -->
+		<xsl:variable name="url">
+			<xsl:choose>
+				<!-- TODO: Maybe http is not realy correct: what if it should be https?? -->
+				<xsl:when test="$x-forwarded-host!=''">http://<xsl:value-of select="$x-forwarded-host"/><xsl:value-of select="request/request-path"/></xsl:when>
+				<xsl:otherwise><xsl:value-of select="request/request-url"/></xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+		
 		<context docroot="{$docroot}" version="{version/number}" timestamp="{version/timestamp}" sparql="{theatre/@sparql}">
 			<configuration-endpoint><xsl:value-of select="theatre/@configuration-endpoint"/></configuration-endpoint>
 			<local-endpoint>
@@ -80,7 +94,13 @@
 					<xsl:otherwise><xsl:value-of select="theatre/@local-endpoint"/></xsl:otherwise>
 				</xsl:choose>
 			</local-endpoint>
-			<url><xsl:value-of select="request/request-url"/></url>
+			<title>
+				<xsl:choose>
+					<xsl:when test="$stage/@title!=''"><xsl:value-of select="$stage/@title"/></xsl:when>
+					<xsl:otherwise>Linked Data Theatre</xsl:otherwise>
+				</xsl:choose>
+			</title>
+			<url><xsl:value-of select="$url"/></url>
 			<domain><xsl:value-of select="$domain"/></domain>
 			<subdomain><xsl:value-of select="$subdomain"/></subdomain>
 			<query><xsl:value-of select="theatre/query"/></query>
@@ -89,7 +109,7 @@
 			<language><xsl:value-of select="substring(request/headers/header[name='accept-language']/value,1,2)"/></language>
 			<user><xsl:value-of select="request/remote-user"/></user>
 			<user-role><xsl:value-of select="request-security/role"/></user-role>
-			<representation><xsl:value-of select="theatre/representation"/></representation>
+			<representation><xsl:value-of select="replace(theatre/representation,$uri-filter,'')"/></representation> <!-- Remove any illegal characters -->
 			<xsl:if test="$stylesheet!=''"><stylesheet href="{$docroot}/css/{$stylesheet}"/></xsl:if>
 			<format>
 				<xsl:choose>
@@ -119,17 +139,29 @@
 			<subject>
 				<xsl:choose>
 					<!-- For security reasons, subject of a container should ALWAYS be the same as the request-url -->
-					<xsl:when test="exists(/croot)"><xsl:value-of select="request/request-url"/></xsl:when>
+					<xsl:when test="exists(/croot)"><xsl:value-of select="$url"/></xsl:when>
 					<!-- Subject URL available in subject parameter -->
-					<xsl:when test="theatre/subject!=''"><xsl:value-of select="theatre/subject"/></xsl:when>
+					<!-- Remove any illegal characters from URI -->
+					<xsl:when test="theatre/subject!=''"><xsl:value-of select="replace(theatre/subject,$uri-filter,'')"/></xsl:when>
 					<!-- Dereferenceable URI, /doc/ to /id/ redirect -->
-					<xsl:when test="substring-before(request/request-url,'/doc/')!=''">
-						<xsl:variable name="domain" select="substring-before(request/request-url,'/doc/')"/>
-						<xsl:variable name="term" select="substring-after(request/request-url,'/doc/')"/>
+					<xsl:when test="substring-before($url,'/doc/')!=''">
+						<xsl:variable name="domain" select="substring-before($url,'/doc/')"/>
+						<xsl:variable name="term" select="substring-after($url,'/doc/')"/>
 						<xsl:value-of select="$domain"/>/id/<xsl:value-of select="$term"/>
 					</xsl:when>
+					<!-- Special case: /context/ to /def/ redirect -->
+					<xsl:when test="substring-before($url,'/context/')!=''">
+						<xsl:variable name="domain" select="substring-before($url,'/context/')"/>
+						<xsl:variable name="term" select="substring-after($url,'/context/')"/>
+						<xsl:value-of select="$domain"/>
+						<xsl:text>/def/</xsl:text>
+						<xsl:choose>
+							<xsl:when test="matches($term,'.json$')"><xsl:value-of select="substring-before($term,'.json')"/></xsl:when>
+							<xsl:otherwise><xsl:value-of select="$term"/></xsl:otherwise>
+						</xsl:choose>
+					</xsl:when>
 					<!-- Dereferenceable URI, other situations (such as def-URI's) -->
-					<xsl:otherwise><xsl:value-of select="request/request-url"/></xsl:otherwise>
+					<xsl:otherwise><xsl:value-of select="$url"/></xsl:otherwise>
 				</xsl:choose>
 			</subject>
 			<parameters>
@@ -137,6 +169,13 @@
 					<xsl:copy-of select="."/>
 				</xsl:for-each>
 			</parameters>
+			<xsl:if test="request/body/@xsi:type='xs:anyURI'">
+				<xsl:choose>
+					<xsl:when test="request/method='POST'"><upload-file action='insert'><xsl:value-of select="request/body"/></upload-file></xsl:when>
+					<xsl:when test="request/method='PUT'"><upload-file action='put'><xsl:value-of select="request/body"/></upload-file></xsl:when>
+					<xsl:otherwise/>
+				</xsl:choose>
+			</xsl:if>
 		</context>
 	</xsl:template>
 </xsl:stylesheet>

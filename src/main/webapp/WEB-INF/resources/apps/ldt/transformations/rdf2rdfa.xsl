@@ -1,8 +1,8 @@
 <!--
 
     NAME     rdf2rdfa.xsl
-    VERSION  1.6.0
-    DATE     2016-03-13
+    VERSION  1.8.1-SNAPSHOT
+    DATE     2016-06-17
 
     Copyright 2012-2016
 
@@ -70,6 +70,15 @@
 			</xsl:choose>
 		</xsl:variable>
 		<xsl:if test="$plabel!=''"><xsl:attribute name="elmo:label"><xsl:value-of select="$plabel"/></xsl:attribute></xsl:if>
+		<!-- Same for comments -->
+		<xsl:variable name="pcomment">
+			<xsl:choose>
+				<xsl:when test="exists($fragment/rdfs:comment)"><xsl:copy-of select="$fragment/rdfs:comment"/></xsl:when>
+				<xsl:otherwise><xsl:copy-of select="key('resource',$uri)/rdfs:comment"/></xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+		<xsl:if test="$pcomment!=''"><xsl:attribute name="elmo:comment"><xsl:value-of select="$pcomment"/></xsl:attribute></xsl:if>
+		<!-- Other fragments -->
 		<xsl:if test="$fragment/elmo:appearance[1]/@rdf:resource!=''"><xsl:attribute name="elmo:appearance"><xsl:value-of select="$fragment/elmo:appearance[1]/@rdf:resource"/></xsl:attribute></xsl:if>
 		<xsl:if test="$fragment/html:link[1]!=''"><xsl:attribute name="elmo:link"><xsl:value-of select="$fragment/html:link[1]"/></xsl:attribute></xsl:if>
 		<xsl:if test="$fragment/elmo:index[1]!=''"><xsl:attribute name="elmo:index"><xsl:value-of select="$fragment/elmo:index[1]"/></xsl:attribute></xsl:if>
@@ -161,9 +170,15 @@
 			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#ContentAppearance' or $appearance='http://bp4mc2.org/elmo/def#CarouselAppearance'">
 				<xsl:variable name="fragments" select="fragment"/>
+				<xsl:variable name="properties">
+					<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description/*" group-by="name()">
+						<property><xsl:value-of select="namespace-uri()"/><xsl:value-of select="local-name()"/></property>
+					</xsl:for-each-group>
+				</xsl:variable>
 				<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description" group-by="@rdf:about">
-					<xsl:if test="exists(current-group()/*[name()!='rdfs:label'])"> <!-- Groups with only labels should be ignored -->
-						<rdf:Description rdf:about="{@rdf:about}">
+					<xsl:variable name="about" select="@rdf:about"/>
+					<xsl:if test="exists(current-group()/*[name()!='rdfs:label']) and not(exists($properties/property[.=$about]))"> <!-- Groups with only labels should be ignored -->
+						<rdf:Description rdf:about="{$about}">
 							<xsl:apply-templates select="current-group()/*" mode="property">
 								<xsl:with-param name="fragments" select="$fragments"/>
 							</xsl:apply-templates>
@@ -198,6 +213,20 @@
 					</rdf:Description>
 				</xsl:for-each>
 			</xsl:when>
+			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#NavbarSearchAppearance'">
+				<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description" group-by="@rdf:nodeID">
+					<rdf:Description rdf:nodeID="{@rdf:nodeID}">
+						<xsl:copy-of select="current-group()/*"/>
+					</rdf:Description>
+				</xsl:for-each-group>
+			</xsl:when>
+			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#TreeAppearance'">
+				<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description" group-by="@rdf:about">
+					<rdf:Description rdf:about="{@rdf:about}">
+						<xsl:copy-of select="current-group()/*"/>
+					</rdf:Description>
+				</xsl:for-each-group>
+			</xsl:when>
 			<xsl:when test="$appearance='http://bp4mc2.org/elmo/def#GeoSelectAppearance' or $appearance='http://bp4mc2.org/elmo/def#GeoAppearance' or $appearance='http://bp4mc2.org/elmo/def#ImageAppearance'">
 				<xsl:if test="$appearance='http://bp4mc2.org/elmo/def#GeoSelectAppearance' and not(exists(/root/results/rdf:RDF[position()=$index]/*))">
 				<rdf:Description rdf:about="locator">
@@ -205,7 +234,36 @@
 					<geo:lat><xsl:value-of select="/root/context/parameters/parameter[name='lat']/value"/></geo:lat>
 				</rdf:Description>
 				</xsl:if>
-				<xsl:copy-of select="/root/results/rdf:RDF[position()=$index]/*"/>
+				<xsl:variable name="fragments" select="fragment"/>
+				<xsl:for-each-group select="/root/results/rdf:RDF[position()=$index]/rdf:Description" group-by="@rdf:about">
+					<rdf:Description rdf:about="{@rdf:about}">
+						<xsl:for-each select="current-group()/*">
+							<xsl:element name="{name()}" namespace="{namespace-uri()}">
+								<!-- full uri of the property -->
+								<xsl:variable name="uri"><xsl:value-of select="namespace-uri()"/><xsl:value-of select="local-name()"/></xsl:variable>
+								<!-- Find an applicable fragment -->
+								<xsl:variable name="fragment" select="$fragments[@applies-to=$uri]"/>
+								<xsl:choose>
+									<xsl:when test="exists(@rdf:resource)">
+										<xsl:if test="exists($fragment/elmo:appearance)">
+											<xsl:attribute name="elmo:appearance"><xsl:value-of select="$fragment/elmo:appearance/@rdf:resource"/></xsl:attribute>
+										</xsl:if>
+										<xsl:attribute name="rdf:resource"><xsl:value-of select="@rdf:resource"/></xsl:attribute>
+									</xsl:when>
+									<xsl:when test="exists(@rdf:nodeID)">
+										<xsl:attribute name="rdf:nodeID"><xsl:value-of select="@rdf:nodeID"/></xsl:attribute>
+									</xsl:when>
+									<xsl:otherwise>
+										<xsl:if test="exists(@xml:lang)">
+											<xsl:attribute name="xml:lang"><xsl:value-of select="@xml:lang"/></xsl:attribute>
+										</xsl:if>
+										<xsl:value-of select="."/>
+									</xsl:otherwise>
+								</xsl:choose>
+							</xsl:element>
+						</xsl:for-each>
+					</rdf:Description>
+				</xsl:for-each-group>
 				<xsl:for-each select="fragment">
 					<rdf:Description rdf:nodeID="f{position()}">
 						<xsl:if test="@applies-to!=''"><elmo:applies-to><xsl:value-of select="@applies-to"/></elmo:applies-to></xsl:if>
@@ -221,6 +279,8 @@
 
 </xsl:template>
 
+<!-- THIS PART OF THE CODEBASE IS DEPRECATED AND SHOULD BE DELETED -->
+<!-- Start -->
 <xsl:template match="representation" mode="merge">
 	<xsl:param name="index"/>
 
@@ -284,6 +344,7 @@
 	</rdf:RDF>
 
 </xsl:template>
+<!-- END -->
 
 <xsl:template match="/root">
 	<results>
@@ -292,18 +353,20 @@
 			<xsl:copy-of select="context/*"/>
 			<xsl:copy-of select="view/stylesheet"/>
 		</context>
-		<xsl:for-each select="view/representation[not(exists(service))]">
+		<xsl:for-each select="view/representation">
 			<xsl:variable name="index" select="position()"/>
 			<xsl:apply-templates select="." mode="results">
 				<xsl:with-param name="index" select="$index"/>
 			</xsl:apply-templates>
 		</xsl:for-each>
+		<!--
 		<xsl:for-each select="view/representation[exists(service)]">
 			<xsl:variable name="index" select="position()"/>
 			<xsl:apply-templates select="." mode="merge">
 				<xsl:with-param name="index" select="$index"/>
 			</xsl:apply-templates>
 		</xsl:for-each>
+		-->
 	</results>
 </xsl:template>
 

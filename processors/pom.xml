@@ -12,6 +12,7 @@
 		<license.failIfMissing>false</license.failIfMissing>
 		<release.version>1.5.1</release.version>
 		<release.date>2016-02-09</release.date>
+		<patch.date>2016-02-09</patch.date>
 	</properties>
 	<dependencies>
 		<!-- Dependency for testing -->
@@ -51,13 +52,6 @@
 			<version>3.10.1</version>
 			<scope>compile</scope>
 		</dependency>
-		<!-- Dependencies RDBSerializer -->
-		<dependency>
-			<groupId>morphrdb</groupId>
-			<artifactId>morphrdb</artifactId>
-			<version>3.5.15</version>
-			<scope>compile</scope>
-		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -70,6 +64,7 @@
 					<properties>
 						<release.version>${release.version}</release.version>
 						<release.date>${release.date}</release.date>
+						<patch.date>${patch.date}</patch.date>
 					</properties>
 					<excludes>
 						<exclude>**/*.md</exclude>

@@ -1,8 +1,8 @@
 <!--
 
     NAME     TableExcelTranslator.xsl
-    VERSION  1.6.2
-    DATE     2016-03-16
+    VERSION  1.8.0
+    DATE     2016-06-15
 
     Copyright 2012-2016
 
@@ -208,6 +208,7 @@
 							<!-- Only proces regular properties -->
 							<xsl:for-each select="$properties/property">
 								<xsl:variable name="column" select="@column"/>
+								<xsl:variable name="condition-value" select="$columns/column[@id=$conditions/condition[@column=$column and @class='']/@checkcolumn[1]]"/>
 								<xsl:variable name="objecturi">
 									<xsl:choose>
 										<xsl:when test="exists($conditions/value[@column=$column and @class=''])">
@@ -217,11 +218,11 @@
 												<xsl:with-param name="uri-schema" select="$conditions/value[@column=$column and @class='']/@value[1]"/>
 											</xsl:call-template>
 										</xsl:when>
-										<xsl:when test="exists($conditions/condition[@column=$column and @class=''])">
+										<xsl:when test="exists($conditions/condition[@column=$column and @class='' and @check=$condition-value])">
 											<xsl:call-template name="create-uri">
 												<xsl:with-param name="sheet" select="$valuesheet"/>
 												<xsl:with-param name="columns" select="$columns"/>
-												<xsl:with-param name="uri-schema" select="$conditions/condition[@column=$column and @class='']/@value[1]"/>
+												<xsl:with-param name="uri-schema" select="$conditions/condition[@column=$column and @class='' and @check=$condition-value]/@value[1]"/>
 											</xsl:call-template>
 										</xsl:when>
 										<xsl:otherwise />
